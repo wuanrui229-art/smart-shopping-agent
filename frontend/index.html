@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="基于大语言模型和可解释排序算法的智能购物决策系统">
+  <title>智选 · AI 购物决策系统</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">智</div>
+        <div><strong>智选</strong><span>Shopping Intelligence</span></div>
+      </div>
+      <button class="new-chat" id="newChatBtn"><span>＋</span> 新建购物任务</button>
+      <div class="side-section">
+        <div class="section-kicker">最近会话</div>
+        <div class="session-list" id="sessionList"><p class="muted">还没有历史会话</p></div>
+      </div>
+      <div class="side-footer">
+        <button class="side-link" id="settingsBtn"><span>偏好</span><b>设置</b></button>
+        <div class="privacy-note">本地演示数据 · 不执行真实下单</div>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="打开菜单">菜单</button>
+        <div class="breadcrumb"><span>自主决策 Agent</span><i></i><strong>购物助手</strong></div>
+        <div class="runtime" id="runtimeBadge"><span class="status-dot"></span><span>检查服务中</span></div>
+      </header>
+
+      <section class="conversation" id="conversation">
+        <div class="hero" id="hero">
+          <div class="eyebrow">从信息列表，到明确决策</div>
+          <h1>少看一点，<em>选对一点。</em></h1>
+          <p>描述你的预算、场景和偏好。系统会自动解析需求、检查评论可信度，并给出 1 个主推与 2 个备选。</p>
+          <div class="capability-row">
+            <span>自然语言解析</span><span>评论可信度</span><span>多维加权决策</span><span>授权式加购</span>
+          </div>
+          <div class="prompt-card">
+            <label for="heroInput">今天想买什么？</label>
+            <div class="prompt-box">
+              <textarea id="heroInput" rows="2" maxlength="500" placeholder="例如：想买一款 500 元内、适合通勤的防水双肩包，要轻一点"></textarea>
+              <button class="send-btn" id="heroSend" aria-label="发送需求">分析</button>
+            </div>
+            <div class="quick-prompts">
+              <button data-query="推荐一款 500 元以内、适合通勤的防水轻量双肩包">通勤双肩包</button>
+              <button data-query="预算 700 元，想买主动降噪、长续航的蓝牙耳机">降噪耳机</button>
+              <button data-query="500 元左右的日常慢跑鞋，要缓震、透气、耐磨">日常跑鞋</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-stream" id="chatStream"></div>
+        <div class="composer hidden" id="composer">
+          <div class="composer-inner">
+            <textarea id="chatInput" rows="1" maxlength="500" placeholder="继续补充预算、用途或偏好…"></textarea>
+            <button class="send-btn" id="chatSend">发送</button>
+          </div>
+          <small>AI 建议仅用于课程演示，购买前请核对实际商品信息。</small>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="drawer-backdrop hidden" id="drawerBackdrop"></div>
+  <aside class="settings-drawer" id="settingsDrawer" aria-hidden="true">
+    <div class="drawer-head"><div><span>个人化配置</span><h2>购物偏好</h2></div><button id="closeSettings" aria-label="关闭">×</button></div>
+    <form id="preferenceForm">
+      <label>偏好品牌<input id="brandPrefs" placeholder="例如：SoundPeak, PaceFlow"></label>
+      <label>希望避开的特点<input id="avoidPrefs" placeholder="例如：偏重, 漏音, 不耐脏"></label>
+      <label>价格敏感度 <output id="priceOutput">50%</output><input id="priceSensitivity" type="range" min="0" max="100" value="50"></label>
+      <fieldset>
+        <legend>决策风格</legend>
+        <label class="radio-card"><input type="radio" name="style" value="conservative">稳健优先 <span>更关注可信度与风险</span></label>
+        <label class="radio-card"><input type="radio" name="style" value="balanced" checked>均衡决策 <span>质量、价格与匹配度平衡</span></label>
+        <label class="radio-card"><input type="radio" name="style" value="aggressive">性能优先 <span>更愿意为功能付费</span></label>
+      </fieldset>
+      <button class="primary-wide" type="submit">保存偏好</button>
+    </form>
+  </aside>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
