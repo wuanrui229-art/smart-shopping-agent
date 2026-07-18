@@ -1,4 +1,5 @@
 from algorithm.demand_parser import parse_demand_rules
+from algorithm.original_demo import detect_category, recommend_original
 from algorithm.pipeline import ShoppingPipeline
 from algorithm.review_analyzer import analyze_reviews
 
@@ -43,3 +44,17 @@ def test_pipeline_returns_auditable_top_three():
     assert result["recommendations"][0]["role"] == "主推"
     assert result["weights"] == {"credibility": 0.4, "match": 0.3, "price": 0.2, "rating": 0.1}
     assert result["recommendations"][0]["overall_score"] >= result["recommendations"][1]["overall_score"]
+
+
+def test_original_week7_catalog_supports_all_six_categories():
+    queries = ["Kids Backpack", "Headphones", "Running Shoes", "Tablet", "Keyboard", "Smart Watch"]
+    for query in queries:
+        result = recommend_original(query)
+        assert result["status"] == "success"
+        assert len(result["recs"]) == 3
+        assert result["recs"][0]["rank"] == 1
+
+
+def test_original_category_detection_is_phrase_aware():
+    assert detect_category("I need a smart watch for fitness") == "smartwatch"
+    assert detect_category("Recommend running shoes") == "running_shoes"

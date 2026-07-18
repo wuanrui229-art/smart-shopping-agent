@@ -1,0 +1,1214 @@
+{
+  "backpack": {
+    "cat": "Kids Backpack",
+    "icon": "🎒",
+    "demand": "Need a durable, waterproof kids backpack for daily school use (ages 6-10).",
+    "user_profile": {
+      "primary_use": "Daily school commute",
+      "age_group": "6-10 years",
+      "key_concerns": [
+        "Durability",
+        "Water resistance",
+        "Lightweight",
+        "Storage space"
+      ],
+      "budget_range": "$20-60"
+    },
+    "market_analysis": {
+      "price_range": "$19 - $75",
+      "avg_rating": "4.5/5",
+      "total_reviews_analyzed": 15857,
+      "key_trends": [
+        "Waterproof demand up 34% YoY",
+        "Lightweight materials preferred",
+        "Multi-compartment designs trending"
+      ]
+    },
+    "recs": [
+      {
+        "rank": 1,
+        "title": "VASchy Lightweight Waterproof Kids Backpack",
+        "price": 28.99,
+        "rating": 4.6,
+        "reviews": 1247,
+        "score": 88.5,
+        "url": "https://amazon.com/dp/B08N5WRWNW",
+        "pros": "Water-resistant, Lightweight, Multi compartments",
+        "cons": "Limited color options",
+        "badge": "Amazon's Choice",
+        "color": "#FF6B6B",
+        "analytics": {
+          "value_score": 92,
+          "durability_score": 88,
+          "feature_score": 90,
+          "user_satisfaction": 91,
+          "price_tier": "Budget-friendly",
+          "review_sentiment": {
+            "positive": 87,
+            "neutral": 10,
+            "negative": 3
+          },
+          "top_keywords": [
+            "waterproof",
+            "lightweight",
+            "durable",
+            "spacious",
+            "comfortable"
+          ],
+          "pros_detail": [
+            "4.6 star average from 1,247 reviews",
+            "Verified waterproof in 500+ user tests",
+            "Weighs only 1.2 lbs - ideal for children",
+            "12 separate compartments for organization"
+          ],
+          "cons_detail": [
+            "Only 4 color options (Black, Blue, Pink, Purple)",
+            "Some users report zippers wear after 18 months",
+            "No padded laptop compartment for older kids"
+          ]
+        }
+      },
+      {
+        "rank": 2,
+        "title": "JanSport SuperBreak Plus Backpack",
+        "price": 35.0,
+        "rating": 4.7,
+        "reviews": 8932,
+        "score": 85.2,
+        "url": "https://amazon.com",
+        "pros": "Lifetime warranty, Large capacity",
+        "cons": "Higher price point",
+        "badge": "Best Seller",
+        "color": "#4ECDC4",
+        "analytics": {
+          "value_score": 75,
+          "durability_score": 95,
+          "feature_score": 78,
+          "user_satisfaction": 89,
+          "price_tier": "Mid-range",
+          "review_sentiment": {
+            "positive": 85,
+            "neutral": 12,
+            "negative": 3
+          },
+          "top_keywords": [
+            "lifetime warranty",
+            "spacious",
+            "durable",
+            "classic",
+            "reliable"
+          ],
+          "pros_detail": [
+            "4.7 star average from 8,932 reviews - highly trusted",
+            "Lifetime warranty covers all manufacturing defects",
+            "26L capacity fits books, lunchbox, and jacket",
+            "Iconic design recognized by parents and kids"
+          ],
+          "cons_detail": [
+            "Premium pricing at $35 vs competitors at $25-28",
+            "Limited internal organization pockets",
+            "No insulated lunch compartment"
+          ]
+        }
+      },
+      {
+        "rank": 3,
+        "title": "Under Armour Scrimmage 2.0 Backpack",
+        "price": 45.0,
+        "rating": 4.8,
+        "reviews": 3456,
+        "score": 82.1,
+        "url": "https://amazon.com",
+        "pros": "Water-resistant, Padded straps",
+        "cons": "Premium price",
+        "badge": "Top Rated",
+        "color": "#45B7D1",
+        "analytics": {
+          "value_score": 65,
+          "durability_score": 92,
+          "feature_score": 85,
+          "user_satisfaction": 88,
+          "price_tier": "Premium",
+          "review_sentiment": {
+            "positive": 88,
+            "neutral": 9,
+            "negative": 3
+          },
+          "top_keywords": [
+            "padded straps",
+            "water-resistant",
+            "sporty",
+            "high quality",
+            "comfortable"
+          ],
+          "pros_detail": [
+            "4.8 star average from 3,456 reviews - highest rated",
+            "UA Storm technology repels water effectively",
+            "Adjustable padded shoulder straps reduce fatigue",
+            "Side water bottle pockets fit standard bottles"
+          ],
+          "cons_detail": [
+            "Premium pricing at $45 - highest in category",
+            "Sport-focused design may not suit all styles",
+            "Some users find it bulky for younger children"
+          ]
+        }
+      }
+    ],
+    "comp": {
+      "products": [
+        "VASchy",
+        "JanSport",
+        "UA Scrimmage"
+      ],
+      "price": [
+        28.99,
+        35.0,
+        45.0
+      ],
+      "match": [
+        92,
+        85,
+        79
+      ],
+      "reputation": [
+        95,
+        93,
+        90
+      ],
+      "value": [
+        91,
+        78,
+        72
+      ],
+      "overall": [
+        92.8,
+        85.5,
+        80.5
+      ]
+    },
+    "personalized_analysis": {
+      "best_for_budget_conscious": "VASchy at $28.99 offers the best value with waterproof features and 4.6-star rating",
+      "best_for_durability_seekers": "JanSport with lifetime warranty - ideal if you plan to use for multiple years",
+      "best_for_quality_focused": "Under Armour at $45 delivers highest user satisfaction (4.8 stars) with premium features",
+      "size_recommendation": "All three fit ages 6-10; VASchy is lightest at 1.2 lbs for younger kids",
+      "final_recommendation": "VASchy is the sweet spot of price, features, and reviews for most families"
+    },
+    "risk_assessment": {
+      "price_fluctuation": "Low - prices stable within 5% over past 6 months",
+      "stock_risk": "Medium - JanSport occasionally out of stock during back-to-school season",
+      "quality_consistency": "High - all three brands maintain consistent manufacturing quality"
+    }
+  },
+  "headphones": {
+    "cat": "Headphones",
+    "icon": "🎧",
+    "demand": "Looking for comfortable wireless headphones for daily commute and work calls.",
+    "user_profile": {
+      "primary_use": "Commute + Work calls",
+      "age_group": "25-45 years",
+      "key_concerns": [
+        "Comfort",
+        "Noise cancellation",
+        "Battery life",
+        "Call quality"
+      ],
+      "budget_range": "$50-200"
+    },
+    "market_analysis": {
+      "price_range": "$29 - $399",
+      "avg_rating": "4.3/5",
+      "total_reviews_analyzed": 45231,
+      "key_trends": [
+        "ANC now standard in mid-range",
+        "Multi-point connectivity demand rising",
+        "60hr+ battery life becoming norm"
+      ]
+    },
+    "recs": [
+      {
+        "rank": 1,
+        "title": "Sony WH-CH720N Wireless Noise Canceling",
+        "price": 99.99,
+        "rating": 4.4,
+        "reviews": 5621,
+        "score": 90.1,
+        "url": "https://amazon.com",
+        "pros": "ANC, 35hr battery, Multipoint",
+        "cons": "Plastic build",
+        "badge": "Best Value",
+        "color": "#8B5CF6",
+        "analytics": {
+          "value_score": 95,
+          "durability_score": 78,
+          "feature_score": 92,
+          "user_satisfaction": 88,
+          "price_tier": "Mid-range",
+          "review_sentiment": {
+            "positive": 82,
+            "neutral": 13,
+            "negative": 5
+          },
+          "top_keywords": [
+            "noise canceling",
+            "battery life",
+            "comfortable",
+            "multipoint",
+            "lightweight"
+          ],
+          "pros_detail": [
+            "35-hour battery life with ANC on",
+            "Multipoint connection to 2 devices simultaneously",
+            "Lightweight at only 192g",
+            "Quick charge: 3 min = 1 hour playback"
+          ],
+          "cons_detail": [
+            "Plastic construction feels less premium",
+            "ANC not as strong as flagship WH-1000XM5",
+            "No LDAC hi-res codec support"
+          ]
+        }
+      },
+      {
+        "rank": 2,
+        "title": "Soundcore Space Q45",
+        "price": 149.99,
+        "rating": 4.5,
+        "reviews": 8234,
+        "score": 88.3,
+        "url": "https://amazon.com",
+        "pros": "65hr battery, Hi-Res, App control",
+        "cons": "Bulky case",
+        "badge": "Top Rated",
+        "color": "#06B6D4",
+        "analytics": {
+          "value_score": 82,
+          "durability_score": 85,
+          "feature_score": 94,
+          "user_satisfaction": 90,
+          "price_tier": "Mid-range",
+          "review_sentiment": {
+            "positive": 86,
+            "neutral": 10,
+            "negative": 4
+          },
+          "top_keywords": [
+            "battery life",
+            "hi-res audio",
+            "app control",
+            "comfortable",
+            "value"
+          ],
+          "pros_detail": [
+            "Industry-leading 65-hour battery life",
+            "Hi-Res Audio certified with LDAC support",
+            "Comprehensive Soundcore app with EQ customization",
+            "Comfortable memory foam ear cushions"
+          ],
+          "cons_detail": [
+            "Carrying case is bulky for travel",
+            "Touch controls can be finicky in cold weather",
+            "App requires account registration"
+          ]
+        }
+      },
+      {
+        "rank": 3,
+        "title": "Bose QuietComfort SE",
+        "price": 199.0,
+        "rating": 4.6,
+        "reviews": 15234,
+        "score": 86.7,
+        "url": "https://amazon.com",
+        "pros": "Best-in-class ANC, Premium comfort",
+        "cons": "Higher price, 24hr battery",
+        "badge": "Premium Pick",
+        "color": "#10B981",
+        "analytics": {
+          "value_score": 68,
+          "durability_score": 88,
+          "feature_score": 90,
+          "user_satisfaction": 92,
+          "price_tier": "Premium",
+          "review_sentiment": {
+            "positive": 89,
+            "neutral": 8,
+            "negative": 3
+          },
+          "top_keywords": [
+            "noise cancellation",
+            "premium comfort",
+            "Bose quality",
+            "travel essential",
+            "luxury"
+          ],
+          "pros_detail": [
+            "World-class active noise cancellation",
+            "Plush protein leather ear cushions",
+            "20+ years of Bose acoustic engineering",
+            "Fold-flat design for compact storage"
+          ],
+          "cons_detail": [
+            "Premium $199 pricing",
+            "24-hour battery life shorter than competitors",
+            "No multipoint connection in this model"
+          ]
+        }
+      }
+    ],
+    "comp": {
+      "products": [
+        "Sony WH-CH720N",
+        "Soundcore Q45",
+        "Bose QC SE"
+      ],
+      "price": [
+        99.99,
+        149.99,
+        199.0
+      ],
+      "match": [
+        90,
+        86,
+        82
+      ],
+      "reputation": [
+        92,
+        91,
+        95
+      ],
+      "value": [
+        94,
+        83,
+        70
+      ],
+      "overall": [
+        91.5,
+        88.0,
+        84.5
+      ]
+    },
+    "personalized_analysis": {
+      "best_value": "Sony WH-CH720N at $99.99 - best balance of features and price",
+      "best_battery": "Soundcore Q45 with 65 hours - nearly double the competition",
+      "best_anc": "Bose QC SE - if noise cancellation is your top priority",
+      "comfort_winner": "Bose edges out slightly for all-day wear comfort",
+      "final_recommendation": "Sony WH-CH720N for most users; Bose if ANC is critical"
+    },
+    "risk_assessment": {
+      "price_fluctuation": "Medium - frequent sales, buy during Prime Day",
+      "stock_risk": "Low - all models well-stocked",
+      "quality_consistency": "High - established brands with strict QC"
+    }
+  },
+  "running_shoes": {
+    "cat": "Running Shoes",
+    "icon": "👟",
+    "demand": "Looking for cushioned running shoes for daily 5K training on pavement, neutral pronation.",
+    "user_profile": {
+      "primary_use": "Daily 5K road running",
+      "age_group": "20-40 years",
+      "key_concerns": [
+        "Cushioning",
+        "Breathability",
+        "Durability",
+        "Arch support"
+      ],
+      "budget_range": "$80-160"
+    },
+    "market_analysis": {
+      "price_range": "$50 - $250",
+      "avg_rating": "4.4/5",
+      "total_reviews_analyzed": 28345,
+      "key_trends": [
+        "Carbon plate tech trickling down to mid-range",
+        "Sustainable/recycled materials gaining share",
+        "Max cushion segment growing 28% YoY"
+      ]
+    },
+    "recs": [
+      {
+        "rank": 1,
+        "title": "Brooks Ghost 15 Neutral Running Shoe",
+        "price": 109.95,
+        "rating": 4.6,
+        "reviews": 15234,
+        "score": 91.2,
+        "url": "https://amazon.com",
+        "pros": "Balanced cushion, Durable, Breathable",
+        "cons": "Not for speedwork",
+        "badge": "Best Overall",
+        "color": "#3B82F6",
+        "analytics": {
+          "value_score": 88,
+          "durability_score": 92,
+          "feature_score": 85,
+          "user_satisfaction": 91,
+          "price_tier": "Mid-range",
+          "review_sentiment": {
+            "positive": 89,
+            "neutral": 8,
+            "negative": 3
+          },
+          "top_keywords": [
+            "balanced cushion",
+            "comfortable",
+            "durable",
+            "breathable",
+            "reliable"
+          ],
+          "pros_detail": [
+            "4.6 stars from 15,234 reviews - most trusted daily trainer",
+            "DNA Loft v2 midsole provides consistent cushioning across lifespan",
+            "Engineered mesh upper keeps feet cool in summer runs",
+            "350-500 mile lifespan reported by 78% of reviewers"
+          ],
+          "cons_detail": [
+            "8.9 oz weight feels slightly heavy for speed sessions",
+            "Less responsive than carbon-plated alternatives",
+            "Upper mesh can fray at toe box after 300+ miles"
+          ]
+        }
+      },
+      {
+        "rank": 2,
+        "title": "HOKA Clifton 9 Running Shoe",
+        "price": 144.95,
+        "rating": 4.7,
+        "reviews": 8934,
+        "score": 89.5,
+        "url": "https://amazon.com",
+        "pros": "Max cushion, Lightweight for stack height",
+        "cons": "Premium price",
+        "badge": "Top Cushion",
+        "color": "#10B981",
+        "analytics": {
+          "value_score": 75,
+          "durability_score": 80,
+          "feature_score": 95,
+          "user_satisfaction": 93,
+          "price_tier": "Premium",
+          "review_sentiment": {
+            "positive": 91,
+            "neutral": 6,
+            "negative": 3
+          },
+          "top_keywords": [
+            "max cushion",
+            "cloud-like",
+            "lightweight",
+            "recovery run",
+            "plush"
+          ],
+          "pros_detail": [
+            "4.7 star average from 8,934 reviews",
+            "39mm stack height provides unmatched shock absorption",
+            "Surprisingly light at 8.7 oz despite massive cushion",
+            "Early stage Meta-Rocker promotes smooth transition"
+          ],
+          "cons_detail": [
+            "Premium $145 pricing - 32% above category average",
+            "Outsole rubber wears faster than Brooks at 250-350 miles",
+            "Some users report heel slip during sharp turns"
+          ]
+        }
+      },
+      {
+        "rank": 3,
+        "title": "ASICS Gel-Venture 9 Trail/Road Hybrid",
+        "price": 69.95,
+        "rating": 4.4,
+        "reviews": 6789,
+        "score": 85.8,
+        "url": "https://amazon.com",
+        "pros": "Budget-friendly, Versatile terrain",
+        "cons": "Firmer ride",
+        "badge": "Best Budget",
+        "color": "#F59E0B",
+        "analytics": {
+          "value_score": 96,
+          "durability_score": 88,
+          "feature_score": 78,
+          "user_satisfaction": 85,
+          "price_tier": "Budget-friendly",
+          "review_sentiment": {
+            "positive": 83,
+            "neutral": 13,
+            "negative": 4
+          },
+          "top_keywords": [
+            "budget",
+            "versatile",
+            "grip",
+            "trail ready",
+            "affordable"
+          ],
+          "pros_detail": [
+            "Exceptional value at $69.95 - lowest price with reliable quality",
+            "Trail outsole pattern works on both pavement and light trails",
+            "Rearfoot GEL provides adequate impact protection",
+            "Durable synthetic leather overlays protect from debris"
+          ],
+          "cons_detail": [
+            "Firmer midsole feel compared to Clifton or Ghost",
+            "Heavier at 10.4 oz - noticeable on longer runs",
+            "Less breathable than mesh-only designs in hot weather"
+          ]
+        }
+      }
+    ],
+    "comp": {
+      "products": [
+        "Brooks Ghost 15",
+        "HOKA Clifton 9",
+        "ASICS Gel-Venture 9"
+      ],
+      "price": [
+        109.95,
+        144.95,
+        69.95
+      ],
+      "match": [
+        93,
+        88,
+        84
+      ],
+      "reputation": [
+        94,
+        91,
+        88
+      ],
+      "value": [
+        85,
+        68,
+        96
+      ],
+      "overall": [
+        91.2,
+        89.5,
+        85.8
+      ]
+    },
+    "personalized_analysis": {
+      "best_daily_trainer": "Brooks Ghost 15 - most versatile for mixed training paces",
+      "best_cushion": "HOKA Clifton 9 - if comfort is your absolute top priority",
+      "best_budget": "ASICS Gel-Venture 9 at $69.95 - incredible value for beginners",
+      "durability_winner": "Brooks Ghost leads with 350-500 mile lifespan",
+      "final_recommendation": "Brooks Ghost 15 for most runners; HOKA Clifton if you prioritize cushioning over price"
+    },
+    "risk_assessment": {
+      "price_fluctuation": "Medium - Brooks and HOKA raise prices 5-8% annually",
+      "stock_risk": "Low - all models well-stocked year-round",
+      "quality_consistency": "High - all three brands have strict QC standards"
+    }
+  },
+  "tablet": {
+    "cat": "Tablet",
+    "icon": "📱",
+    "demand": "Need a versatile tablet for media streaming, light work, and reading. Good display and battery life essential.",
+    "user_profile": {
+      "primary_use": "Media + Light productivity",
+      "age_group": "All ages",
+      "key_concerns": [
+        "Display quality",
+        "Battery life",
+        "Performance",
+        "Portability"
+      ],
+      "budget_range": "$200-600"
+    },
+    "market_analysis": {
+      "price_range": "$89 - $1,899",
+      "avg_rating": "4.3/5",
+      "total_reviews_analyzed": 67234,
+      "key_trends": [
+        "OLED displays becoming standard in premium",
+        "Keyboard accessories driving productivity use",
+        "Apple Pencil / S Pen adoption up 41%"
+      ]
+    },
+    "recs": [
+      {
+        "rank": 1,
+        "title": "Apple iPad (10th Generation) 10.9-inch",
+        "price": 349.0,
+        "rating": 4.7,
+        "reviews": 28456,
+        "score": 92.3,
+        "url": "https://amazon.com",
+        "pros": "A14 chip, USB-C, 10hr battery",
+        "cons": "Apple Pencil 1 only",
+        "badge": "Best Overall",
+        "color": "#6366F1",
+        "analytics": {
+          "value_score": 82,
+          "durability_score": 94,
+          "feature_score": 91,
+          "user_satisfaction": 94,
+          "price_tier": "Mid-range",
+          "review_sentiment": {
+            "positive": 92,
+            "neutral": 6,
+            "negative": 2
+          },
+          "top_keywords": [
+            "smooth performance",
+            "great display",
+            "long battery",
+            "iPadOS ecosystem",
+            "versatile"
+          ],
+          "pros_detail": [
+            "4.7 stars from 28,456 reviews - most loved tablet",
+            "A14 Bionic chip handles multitasking and gaming effortlessly",
+            "Liquid Retina display with True Tone for comfortable reading",
+            "10-hour battery life consistently achieved in real use"
+          ],
+          "cons_detail": [
+            "Only compatible with 1st gen Apple Pencil (Lightning)",
+            "Magic Keyboard Folio sold separately ($249)",
+            "64GB base storage may fill quickly with apps and media"
+          ]
+        }
+      },
+      {
+        "rank": 2,
+        "title": "Samsung Galaxy Tab S9 FE 10.9-inch",
+        "price": 399.99,
+        "rating": 4.5,
+        "reviews": 5234,
+        "score": 88.7,
+        "url": "https://amazon.com",
+        "pros": "S Pen included, IP68, 120Hz",
+        "cons": "FE chip slower than flagship",
+        "badge": "Best Android",
+        "color": "#3B82F6",
+        "analytics": {
+          "value_score": 85,
+          "durability_score": 92,
+          "feature_score": 88,
+          "user_satisfaction": 89,
+          "price_tier": "Mid-range",
+          "review_sentiment": {
+            "positive": 85,
+            "neutral": 11,
+            "negative": 4
+          },
+          "top_keywords": [
+            "S Pen",
+            "waterproof",
+            "120Hz display",
+            "DeX mode",
+            "expandable storage"
+          ],
+          "pros_detail": [
+            "S Pen included in box - no extra purchase needed",
+            "IP68 water and dust resistance - rare in tablets",
+            "120Hz adaptive refresh rate for smooth scrolling",
+            "MicroSD slot supports up to 1TB expansion"
+          ],
+          "cons_detail": [
+            "Exynos 1380 chip lags behind A14 in benchmarks",
+            "Android tablet app ecosystem still behind iPadOS",
+            "Samsung DeX experience inconsistent with some apps"
+          ]
+        }
+      },
+      {
+        "rank": 3,
+        "title": "Amazon Fire HD 10 Plus 10.1-inch",
+        "price": 139.99,
+        "rating": 4.3,
+        "reviews": 45678,
+        "score": 83.4,
+        "url": "https://amazon.com",
+        "pros": "Budget king, Wireless charging, Great display",
+        "cons": "Amazon app store limited",
+        "badge": "Best Budget",
+        "color": "#F59E0B",
+        "analytics": {
+          "value_score": 98,
+          "durability_score": 82,
+          "feature_score": 75,
+          "user_satisfaction": 86,
+          "price_tier": "Budget-friendly",
+          "review_sentiment": {
+            "positive": 80,
+            "neutral": 14,
+            "negative": 6
+          },
+          "top_keywords": [
+            "budget",
+            "good display",
+            "wireless charging",
+            "Prime Video",
+            "value"
+          ],
+          "pros_detail": [
+            "Unbeatable value at $139.99 with Full HD display",
+            "Wireless charging eliminates daily cable fumbling",
+            "Works seamlessly with Amazon Prime ecosystem",
+            "Split-screen multitasking with octa-core processor"
+          ],
+          "cons_detail": [
+            "Amazon Appstore has far fewer apps than Google Play/App Store",
+            "No Google apps pre-installed (YouTube via browser)",
+            "3GB RAM limits heavy multitasking capability",
+            "Ads on lock screen unless paying $15 removal fee"
+          ]
+        }
+      }
+    ],
+    "comp": {
+      "products": [
+        "iPad 10th Gen",
+        "Galaxy Tab S9 FE",
+        "Fire HD 10 Plus"
+      ],
+      "price": [
+        349.0,
+        399.99,
+        139.99
+      ],
+      "match": [
+        94,
+        88,
+        82
+      ],
+      "reputation": [
+        97,
+        90,
+        85
+      ],
+      "value": [
+        75,
+        80,
+        98
+      ],
+      "overall": [
+        92.3,
+        88.7,
+        83.4
+      ]
+    },
+    "personalized_analysis": {
+      "best_ecosystem": "Apple iPad 10th Gen - if you already use iPhone or Mac",
+      "best_android": "Samsung Galaxy Tab S9 FE - S Pen + expandable storage + DeX",
+      "best_budget": "Fire HD 10 Plus at $139.99 - 60% cheaper with solid media experience",
+      "best_display": "iPad and Tab S9 FE both have excellent screens; Fire HD 10 Plus is acceptable",
+      "final_recommendation": "iPad 10th Gen for most users; Tab S9 FE for Android ecosystem; Fire HD 10 Plus for budget buyers"
+    },
+    "risk_assessment": {
+      "price_fluctuation": "Low - Apple rarely discounts; Samsung frequent sales",
+      "stock_risk": "Low - all models well-stocked",
+      "quality_consistency": "High - all established manufacturers"
+    }
+  },
+  "keyboard": {
+    "cat": "Keyboard",
+    "icon": "⌨️",
+    "demand": "Looking for a comfortable mechanical keyboard for daily programming and writing. Prefer tactile switches.",
+    "user_profile": {
+      "primary_use": "Programming + Writing",
+      "age_group": "20-45 years",
+      "key_concerns": [
+        "Switch feel",
+        "Build quality",
+        "Keycap quality",
+        "Noise level"
+      ],
+      "budget_range": "$60-150"
+    },
+    "market_analysis": {
+      "price_range": "$25 - $300",
+      "avg_rating": "4.4/5",
+      "total_reviews_analyzed": 18456,
+      "key_trends": [
+        "Hot-swappable switches trending",
+        "PBT keycaps becoming standard",
+        "75% layout gaining popularity over full-size"
+      ]
+    },
+    "recs": [
+      {
+        "rank": 1,
+        "title": "Keychron K8 Pro 75% Mechanical",
+        "price": 89.0,
+        "rating": 4.6,
+        "reviews": 3245,
+        "score": 91.8,
+        "url": "https://amazon.com",
+        "pros": "Hot-swappable, Mac/Windows, PBT keycaps",
+        "cons": "No RGB in base model",
+        "badge": "Best Value",
+        "color": "#8B5CF6",
+        "analytics": {
+          "value_score": 94,
+          "durability_score": 90,
+          "feature_score": 93,
+          "user_satisfaction": 90,
+          "price_tier": "Mid-range",
+          "review_sentiment": {
+            "positive": 87,
+            "neutral": 10,
+            "negative": 3
+          },
+          "top_keywords": [
+            "hot-swappable",
+            "PBT keycaps",
+            "Mac compatible",
+            "programmable",
+            "solid build"
+          ],
+          "pros_detail": [
+            "Hot-swappable 3-pin and 5-pin MX switches",
+            "QMK/VIA programmable - full key remapping",
+            "OSA profile PBT keycaps resist shine for years",
+            "South-facing RGB LEDs prevent interference with Cherry profile keycaps"
+          ],
+          "cons_detail": [
+            "Base model lacks per-key RGB (white backlight only)",
+            "Keychron software learning curve for beginners",
+            "Slightly tall front edge - wrist rest recommended"
+          ]
+        }
+      },
+      {
+        "rank": 2,
+        "title": "Logitech MX Mechanical Mini",
+        "price": 129.99,
+        "rating": 4.5,
+        "reviews": 5678,
+        "score": 88.2,
+        "url": "https://amazon.com",
+        "pros": "Low-profile, Multi-device, Smart Keys",
+        "cons": "Not hot-swappable",
+        "badge": "Best Low-Profile",
+        "color": "#06B6D4",
+        "analytics": {
+          "value_score": 72,
+          "durability_score": 92,
+          "feature_score": 94,
+          "user_satisfaction": 91,
+          "price_tier": "Premium",
+          "review_sentiment": {
+            "positive": 86,
+            "neutral": 10,
+            "negative": 4
+          },
+          "top_keywords": [
+            "low profile",
+            "multi device",
+            "Logi Bolt",
+            "quiet",
+            "premium feel"
+          ],
+          "pros_detail": [
+            "Connects to 3 devices simultaneously (Easy-Switch)",
+            "Tactile Quiet switches reduce noise by 40% vs standard mechanical",
+            "Smart Actions keys for programmable shortcuts",
+            "USB-C charging with 15-day battery life (backlight off)"
+          ],
+          "cons_detail": [
+            "Not hot-swappable - switches are soldered",
+            "Proprietary low-profile switches limit aftermarket options",
+            "No adjustable feet - fixed typing angle",
+            "Premium $130 pricing for a 65% layout"
+          ]
+        }
+      },
+      {
+        "rank": 3,
+        "title": "Royal Kludge RK61 60% Mechanical",
+        "price": 49.99,
+        "rating": 4.3,
+        "reviews": 12345,
+        "score": 84.6,
+        "url": "https://amazon.com",
+        "pros": "Budget-friendly, Bluetooth, RGB",
+        "cons": "ABS keycaps",
+        "badge": "Best Budget",
+        "color": "#EC4899",
+        "analytics": {
+          "value_score": 97,
+          "durability_score": 78,
+          "feature_score": 82,
+          "user_satisfaction": 87,
+          "price_tier": "Budget-friendly",
+          "review_sentiment": {
+            "positive": 81,
+            "neutral": 14,
+            "negative": 5
+          },
+          "top_keywords": [
+            "budget",
+            "compact",
+            "RGB",
+            "wireless",
+            "starter"
+          ],
+          "pros_detail": [
+            "Exceptional value at $49.99 for a wireless mechanical keyboard",
+            "Dual-mode: Bluetooth 5.0 (3 devices) + USB-C wired",
+            "Full RGB backlighting with 18 preset modes",
+            "60% layout saves massive desk space for mouse movement"
+          ],
+          "cons_detail": [
+            "ABS keycaps develop shine within 6 months of heavy use",
+            "Stabilizers rattle on larger keys (spacebar, enter)",
+            "No dedicated arrow keys - requires Fn layer",
+            "Battery life drops to ~3 days with RGB on max brightness"
+          ]
+        }
+      }
+    ],
+    "comp": {
+      "products": [
+        "Keychron K8 Pro",
+        "Logitech MX Mech Mini",
+        "RK61 60%"
+      ],
+      "price": [
+        89.0,
+        129.99,
+        49.99
+      ],
+      "match": [
+        94,
+        88,
+        80
+      ],
+      "reputation": [
+        92,
+        96,
+        84
+      ],
+      "value": [
+        92,
+        68,
+        97
+      ],
+      "overall": [
+        91.8,
+        88.2,
+        84.6
+      ]
+    },
+    "personalized_analysis": {
+      "best_enthusiast": "Keychron K8 Pro - hot-swappable, QMK/VIA programmable, best for customization",
+      "best_professional": "Logitech MX Mechanical Mini - multi-device workflow, quiet switches, premium feel",
+      "best_budget": "Royal Kludge RK61 at $49.99 - gateway to mechanical keyboards",
+      "best_for_mac": "Both Keychron and Logitech offer excellent Mac support; Keychron has slight edge",
+      "final_recommendation": "Keychron K8 Pro for enthusiasts; Logitech MX Mini for professional multi-device setups; RK61 for budget entry"
+    },
+    "risk_assessment": {
+      "price_fluctuation": "Low - mechanical keyboard prices stable",
+      "stock_risk": "Medium - Keychron sometimes backordered during sales",
+      "quality_consistency": "High - Logitech best QC; RK61 has some variance"
+    }
+  },
+  "smartwatch": {
+    "cat": "Smart Watch",
+    "icon": "⌚",
+    "demand": "Looking for a fitness-focused smartwatch with accurate health tracking and multi-day battery life.",
+    "user_profile": {
+      "primary_use": "Fitness + Health monitoring",
+      "age_group": "25-55 years",
+      "key_concerns": [
+        "Heart rate accuracy",
+        "GPS precision",
+        "Battery life",
+        "Workout tracking"
+      ],
+      "budget_range": "$150-400"
+    },
+    "market_analysis": {
+      "price_range": "$49 - $799",
+      "avg_rating": "4.2/5",
+      "total_reviews_analyzed": 52134,
+      "key_trends": [
+        "Blood oxygen monitoring now standard",
+        "Sleep stage tracking improving",
+        "Multi-band GPS becoming differentiator"
+      ]
+    },
+    "recs": [
+      {
+        "rank": 1,
+        "title": "Garmin Forerunner 265 GPS Running Watch",
+        "price": 349.99,
+        "rating": 4.6,
+        "reviews": 3456,
+        "score": 93.1,
+        "url": "https://amazon.com",
+        "pros": "AMOLED display, Training readiness, Multi-band GPS",
+        "cons": "Premium price",
+        "badge": "Best Fitness",
+        "color": "#10B981",
+        "analytics": {
+          "value_score": 78,
+          "durability_score": 95,
+          "feature_score": 96,
+          "user_satisfaction": 93,
+          "price_tier": "Premium",
+          "review_sentiment": {
+            "positive": 90,
+            "neutral": 8,
+            "negative": 2
+          },
+          "top_keywords": [
+            "AMOLED",
+            "training metrics",
+            "multi-band GPS",
+            "battery life",
+            "serious runner"
+          ],
+          "pros_detail": [
+            "1.3-inch AMOLED touchscreen + 5-button interface",
+            "Training Readiness score based on sleep, HRV, and recent exercise",
+            "Multi-band GNSS provides GPS accuracy within 3 meters",
+            "13-day battery life in smartwatch mode (20 hours GPS)"
+          ],
+          "cons_detail": [
+            "$350 price point excludes casual fitness users",
+            "Music storage only in 265 Music model ($100 more)",
+            "Garmin Connect IQ app store smaller than Apple/Google",
+            "No cellular connectivity option available"
+          ]
+        }
+      },
+      {
+        "rank": 2,
+        "title": "Apple Watch Series 9 GPS 41mm",
+        "price": 329.0,
+        "rating": 4.7,
+        "reviews": 34567,
+        "score": 91.5,
+        "url": "https://amazon.com",
+        "pros": "Double tap, Siri health, ECG",
+        "cons": "18hr battery, iPhone only",
+        "badge": "Best Smart",
+        "color": "#6366F1",
+        "analytics": {
+          "value_score": 72,
+          "durability_score": 90,
+          "feature_score": 95,
+          "user_satisfaction": 94,
+          "price_tier": "Premium",
+          "review_sentiment": {
+            "positive": 92,
+            "neutral": 6,
+            "negative": 2
+          },
+          "top_keywords": [
+            "Double Tap",
+            "Siri",
+            "ECG",
+            "Fall Detection",
+            "ecosystem"
+          ],
+          "pros_detail": [
+            "Double Tap gesture enables one-handed interaction",
+            "S9 SiP chip with on-device Siri for health queries",
+            "FDA-cleared ECG app and irregular rhythm notification",
+            "Fall Detection and Crash Detection for safety"
+          ],
+          "cons_detail": [
+            "18-hour battery life requires daily charging",
+            "iPhone required - no Android compatibility",
+            "Premium pricing with cellular add-on ($100 extra)",
+            "Sleep tracking limited by overnight charging need"
+          ]
+        }
+      },
+      {
+        "rank": 3,
+        "title": "Amazfit GTR 4 Smartwatch",
+        "price": 179.99,
+        "rating": 4.3,
+        "reviews": 5678,
+        "score": 86.4,
+        "url": "https://amazon.com",
+        "pros": "14-day battery, Affordable, AMOLED",
+        "cons": "Third-party app support limited",
+        "badge": "Best Value",
+        "color": "#F59E0B",
+        "analytics": {
+          "value_score": 94,
+          "durability_score": 84,
+          "feature_score": 85,
+          "user_satisfaction": 88,
+          "price_tier": "Mid-range",
+          "review_sentiment": {
+            "positive": 83,
+            "neutral": 12,
+            "negative": 5
+          },
+          "top_keywords": [
+            "battery life",
+            "affordable",
+            "AMOLED",
+            "Zepp OS",
+            "dual-band GPS"
+          ],
+          "pros_detail": [
+            "14-day battery life - best in class for price",
+            "1.43-inch AMOLED display with always-on option",
+            "Dual-band GPS (L1+L5) accuracy rivals Garmin",
+            "Works with both iOS and Android devices"
+          ],
+          "cons_detail": [
+            "Zepp OS has limited third-party app ecosystem",
+            "Sleep tracking less accurate than Garmin/Apple",
+            "Plastic bezel feels less premium than aluminum",
+            "Heart rate accuracy drops during HIIT intervals"
+          ]
+        }
+      }
+    ],
+    "comp": {
+      "products": [
+        "Garmin Forerunner 265",
+        "Apple Watch S9",
+        "Amazfit GTR 4"
+      ],
+      "price": [
+        349.99,
+        329.0,
+        179.99
+      ],
+      "match": [
+        95,
+        88,
+        85
+      ],
+      "reputation": [
+        93,
+        97,
+        82
+      ],
+      "value": [
+        70,
+        65,
+        93
+      ],
+      "overall": [
+        93.1,
+        91.5,
+        86.4
+      ]
+    },
+    "personalized_analysis": {
+      "best_for_runners": "Garmin Forerunner 265 - unmatched training metrics and GPS accuracy",
+      "best_smart_features": "Apple Watch Series 9 - ecosystem integration, health apps, and safety features",
+      "best_battery_value": "Amazfit GTR 4 - 14-day battery at $180 is unbeatable value",
+      "best_cross_platform": "Amazfit GTR 4 works with both iPhone and Android",
+      "final_recommendation": "Garmin Forerunner 265 for serious athletes; Apple Watch S9 for iPhone users wanting smart features; Amazfit GTR 4 for budget-conscious buyers"
+    },
+    "risk_assessment": {
+      "price_fluctuation": "Low - Apple stable; Garmin rarely discounts",
+      "stock_risk": "Low - all models well-stocked",
+      "quality_consistency": "High - Apple/Garmin excellent; Amazfit occasional QC variance"
+    }
+  }
+}

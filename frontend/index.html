@@ -1,88 +1,861 @@
-<!doctype html>
-<html lang="zh-CN">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="基于大语言模型和可解释排序算法的智能购物决策系统">
-  <title>智选 · AI 购物决策系统</title>
-  <link rel="stylesheet" href="/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Shopping AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #FFFFFF; color: #232F3E; height: 100vh; overflow: hidden; }
+        .app { display: flex; height: 100vh; }
+
+        /* ── Left Icon Bar ── */
+        .icon-bar { width: 56px; background: #FFFFFF; border-right: 1px solid #E5E7EB; display: flex; flex-direction: column; align-items: center; padding: 12px 0; flex-shrink: 0; z-index: 50; }
+        .icon-btn { width: 40px; height: 40px; border-radius: 10px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; font-size: 18px; transition: all 0.2s; color: #6B7280; }
+        .icon-btn:hover { background: #F3F4F6; color: #232F3E; }
+        .icon-btn.active { background: #FF9900; color: white; }
+        .icon-btn svg { width: 20px; height: 20px; }
+
+        /* ── Main Area ── */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* ── Top Bar ── */
+        .top-bar { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #E5E7EB; flex-shrink: 0; }
+        .logo { font-size: 18px; font-weight: 700; color: #232F3E; letter-spacing: -0.5px; }
+        .logo span { color: #FF9900; }
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #FF9900, #F97316); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+        /* ── Content ── */
+        .content { flex: 1; overflow-y: auto; padding: 0 20px; display: flex; flex-direction: column; }
+
+        /* ── Centered Home (Alexa-style) ── */
+        .home-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; max-width: 700px; margin: 0 auto; width: 100%; padding-bottom: 80px; }
+        .greeting { font-size: 32px; font-weight: 300; color: #232F3E; margin-bottom: 32px; text-align: center; }
+        .greeting strong { font-weight: 600; }
+
+        /* Input Bar */
+        .input-bar { width: 100%; max-width: 640px; background: #F8F9FA; border: 1px solid #E5E7EB; border-radius: 50px; padding: 6px 6px 6px 20px; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; transition: all 0.2s; }
+        .input-bar:focus-within { border-color: #FF9900; box-shadow: 0 0 0 3px rgba(255,153,0,0.1); }
+        .input-bar input { flex: 1; border: none; background: transparent; font-size: 15px; color: #232F3E; outline: none; padding: 8px 0; }
+        .input-bar input::placeholder { color: #9CA3AF; }
+        .input-bar-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #FF9900; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.2s; flex-shrink: 0; }
+        .input-bar-btn:hover { background: #F97316; }
+        .input-bar-btn:disabled { background: #D1D5DB; cursor: not-allowed; }
+
+        /* Quick Chips */
+        .chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .chip { padding: 8px 16px; background: #F8F9FA; border: 1px solid #E5E7EB; border-radius: 20px; font-size: 13px; color: #374151; cursor: pointer; transition: all 0.2s; }
+        .chip:hover { border-color: #FF9900; color: #FF9900; }
+
+        /* ── Chat View (centered like Alexa) ── */
+        .chat-view { flex: 1; display: none; flex-direction: column; max-width: 700px; margin: 0 auto; width: 100%; padding: 20px 0 100px; }
+        .chat-view.active { display: flex; }
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 15px; line-height: 1.6; margin-bottom: 12px; }
+        .msg-user { background: linear-gradient(135deg, #3B82F6 0%, #6366F1 100%); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg-ai { background: #F3F4F6; color: #232F3E; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #E5E7EB; }
+
+        /* ── Bottom Input (sticky) ── */
+        .bottom-input { position: fixed; bottom: 0; left: 56px; right: 0; padding: 12px 20px; background: white; border-top: 1px solid #E5E7EB; display: flex; justify-content: center; z-index: 100; transition: right 0.3s ease; }
+        .bottom-input.panel-open { right: 360px; }
+        .bottom-input-inner { width: 100%; max-width: 700px; display: flex; align-items: center; gap: 8px; background: #F8F9FA; border: 1px solid #E5E7EB; border-radius: 50px; padding: 4px 4px 4px 16px; }
+        .bottom-input-inner:focus-within { border-color: #FF9900; box-shadow: 0 0 0 3px rgba(255,153,0,0.1); }
+        .bottom-input-inner input { flex: 1; border: none; background: transparent; font-size: 15px; outline: none; padding: 8px 0; }
+        .bottom-send { width: 36px; height: 36px; border-radius: 50%; border: none; background: #FF9900; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+        .bottom-send:hover { background: #F97316; }
+
+        /* ── Right Slide Panel ── */
+        .panel-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .panel-overlay.active { opacity: 1; pointer-events: auto; }
+        .slide-panel { position: fixed; top: 0; right: -360px; width: 360px; height: 100vh; background: #FFFFFF; border-left: 1px solid #E5E7EB; z-index: 250; transition: right 0.3s ease; display: flex; flex-direction: column; }
+        .slide-panel.active { right: 0; }
+        .panel-header { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #E5E7EB; flex-shrink: 0; }
+        .panel-title { font-size: 15px; font-weight: 600; }
+        .panel-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6B7280; font-size: 18px; }
+        .panel-close:hover { background: #F3F4F6; color: #232F3E; }
+        .panel-body { flex: 1; overflow-y: auto; padding: 16px; }
+
+        /* ── Panel: Session List ── */
+        .session-list { display: flex; flex-direction: column; gap: 8px; }
+        .session-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #F8F9FA; border-radius: 10px; border: 1px solid #E5E7EB; cursor: pointer; transition: all 0.2s; }
+        .session-item:hover { border-color: #FF9900; background: #FFF7ED; }
+        .session-info { flex: 1; min-width: 0; }
+        .session-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-time { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+        .session-delete { width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #9CA3AF; font-size: 14px; flex-shrink: 0; }
+        .session-delete:hover { background: #FEE2E2; color: #DC2626; }
+        .session-empty { text-align: center; padding: 40px 20px; color: #9CA3AF; font-size: 14px; }
+
+        /* ── Panel: Settings ── */
+        .setting-section { margin-bottom: 24px; }
+        .setting-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; display: block; }
+        .setting-desc { font-size: 12px; color: #9CA3AF; margin-bottom: 8px; }
+        .setting-input { width: 100%; padding: 10px 12px; border: 1px solid #E5E7EB; border-radius: 8px; font-size: 13px; outline: none; transition: all 0.2s; font-family: inherit; }
+        .setting-input:focus { border-color: #FF9900; box-shadow: 0 0 0 3px rgba(255,153,0,0.1); }
+        .setting-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        .setting-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #EFF6FF; border-radius: 6px; font-size: 12px; color: #2563EB; }
+        .tag-remove { cursor: pointer; font-weight: 600; }
+        .tag-remove:hover { color: #DC2626; }
+        .slider-row { display: flex; align-items: center; gap: 12px; }
+        .slider { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; background: #E5E7EB; border-radius: 3px; outline: none; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; background: #FF9900; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .slider-value { font-size: 13px; font-weight: 600; color: #FF9900; min-width: 36px; text-align: right; }
+        .radio-group { display: flex; flex-direction: column; gap: 8px; }
+        .radio-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 13px; }
+        .radio-item:hover { border-color: #FF9900; }
+        .radio-item.selected { border-color: #FF9900; background: #FFF7ED; }
+        .radio-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #D1D5DB; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .radio-item.selected .radio-dot { border-color: #FF9900; }
+        .radio-dot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #FF9900; display: none; }
+        .radio-item.selected .radio-dot::after { display: block; }
+        .btn-primary { width: 100%; padding: 10px; background: #FF9900; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary:hover { background: #F97316; }
+        .btn-danger { width: 100%; padding: 10px; background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
+        .btn-danger:hover { background: #FECACA; }
+        .btn-secondary { width: 100%; padding: 10px; background: #F3F4F6; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-secondary:hover { background: #E5E7EB; }
+        .divider { height: 1px; background: #E5E7EB; margin: 20px 0; }
+        .danger-zone { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 16px; }
+        .danger-zone-title { font-size: 13px; font-weight: 600; color: #DC2626; margin-bottom: 8px; }
+        .danger-zone-desc { font-size: 12px; color: #9CA3AF; margin-bottom: 12px; }
+
+        /* ── Decision Panel ── */
+        .decision-panel { margin-top: 16px; }
+        .zone { background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .zone h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+        .zone h4 { font-size: 14px; font-weight: 600; margin: 12px 0 8px; }
+        .profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+        .profile-item { font-size: 13px; }
+        .profile-item strong { color: #374151; }
+        .info-box { background: #EFF6FF; border-left: 4px solid #3B82F6; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 14px; }
+        .metrics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
+        .metric-card { background: #F8F9FA; border-radius: 8px; padding: 16px; text-align: center; }
+        .metric-value { font-size: 22px; font-weight: 700; }
+        .metric-label { font-size: 12px; color: #6B7280; margin-top: 4px; }
+
+        /* Product Deep Card */
+        .product-deep { background: white; border: 1px solid #E5E7EB; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .product-header { display: flex; gap: 12px; margin-bottom: 10px; }
+        .product-img { width: 70px; height: 70px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 36px; flex-shrink: 0; }
+        .product-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+        .product-price { color: #FF9900; font-size: 20px; font-weight: 700; }
+        .product-meta { font-size: 12px; color: #6B7280; }
+        .progress-track { height: 6px; background: #F3F4F6; border-radius: 3px; overflow: hidden; margin: 6px 0; }
+        .progress-fill { height: 100%; border-radius: 3px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+
+        /* 4-Dimension */
+        .dim-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+        .dim-card { text-align: center; padding: 10px; background: #F8F9FA; border-radius: 8px; }
+        .dim-score { font-size: 18px; font-weight: 700; }
+        .dim-label { font-size: 11px; color: #6B7280; }
+        .dim-bar { height: 5px; background: #E5E7EB; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+        .dim-fill { height: 100%; border-radius: 3px; }
+
+        /* Sentiment */
+        .sentiment-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+        .sent-card { text-align: center; padding: 10px; border-radius: 8px; font-size: 13px; }
+        .sent-positive { background: #ECFDF5; }
+        .sent-neutral { background: #F3F4F6; }
+        .sent-negative { background: #FEE2E2; }
+        .sent-value { font-size: 16px; font-weight: 700; }
+        .sent-label { font-size: 11px; color: #6B7280; }
+
+        /* Comparison Table */
+        .comp-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        .comp-table th, .comp-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #E5E7EB; }
+        .comp-table th { background: #F8F9FA; font-weight: 600; font-size: 12px; }
+        .comp-table tr:hover { background: #F9FAFB; }
+
+        /* Recommendation */
+        .rec-success { background: #ECFDF5; border-left: 4px solid #059669; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 8px; font-size: 14px; }
+        .rec-warning { background: #FFFBEB; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 8px; font-size: 14px; }
+        .rec-tag { font-weight: 700; }
+
+        .btn-amazon { display: inline-block; padding: 8px 20px; background: #FF9900; color: white; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: 500; margin-top: 8px; }
+        .btn-amazon:hover { background: #F97316; }
+
+        .loading { display: flex; align-items: center; gap: 4px; color: #6B7280; font-size: 14px; padding: 12px 0; align-self: flex-start; }
+        .loading span { animation: blink 1.4s infinite both; }
+        .loading span:nth-child(2) { animation-delay: 0.2s; }
+        .loading span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 1000; animation: fadeIn 0.3s ease; }
+        .toast.success { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+        .toast.error { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+        .toast.info { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 760px) {
+            .icon-bar { width: 48px; }
+            .top-bar { padding: 0 12px; }
+            .content { padding: 0 12px; }
+            .home-view { padding-bottom: 48px; }
+            .greeting { font-size: 26px; }
+            .bottom-input { left: 48px; padding: 10px 12px; }
+            .bottom-input.panel-open { right: 0; }
+            .slide-panel { width: calc(100vw - 48px); right: calc(-100vw + 48px); }
+            .profile-grid, .metrics-row { grid-template-columns: 1fr; }
+            .dim-grid { grid-template-columns: repeat(2, 1fr); }
+            .zone { overflow-x: auto; padding: 16px; }
+            .product-header { align-items: flex-start; }
+            .chips { gap: 8px; }
+            .chip { padding: 7px 12px; }
+        }
+    </style>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <div class="brand-mark">智</div>
-        <div><strong>智选</strong><span>Shopping Intelligence</span></div>
-      </div>
-      <button class="new-chat" id="newChatBtn"><span>＋</span> 新建购物任务</button>
-      <div class="side-section">
-        <div class="section-kicker">最近会话</div>
-        <div class="session-list" id="sessionList"><p class="muted">还没有历史会话</p></div>
-      </div>
-      <div class="side-footer">
-        <button class="side-link" id="settingsBtn"><span>偏好</span><b>设置</b></button>
-        <div class="privacy-note">本地演示数据 · 不执行真实下单</div>
-      </div>
-    </aside>
-
-    <main class="workspace">
-      <header class="topbar">
-        <button class="mobile-menu" id="mobileMenu" aria-label="打开菜单">菜单</button>
-        <div class="breadcrumb"><span>自主决策 Agent</span><i></i><strong>购物助手</strong></div>
-        <div class="runtime" id="runtimeBadge"><span class="status-dot"></span><span>检查服务中</span></div>
-      </header>
-
-      <section class="conversation" id="conversation">
-        <div class="hero" id="hero">
-          <div class="eyebrow">从信息列表，到明确决策</div>
-          <h1>少看一点，<em>选对一点。</em></h1>
-          <p>描述你的预算、场景和偏好。系统会自动解析需求、检查评论可信度，并给出 1 个主推与 2 个备选。</p>
-          <div class="capability-row">
-            <span>自然语言解析</span><span>评论可信度</span><span>多维加权决策</span><span>授权式加购</span>
-          </div>
-          <div class="prompt-card">
-            <label for="heroInput">今天想买什么？</label>
-            <div class="prompt-box">
-              <textarea id="heroInput" rows="2" maxlength="500" placeholder="例如：想买一款 500 元内、适合通勤的防水双肩包，要轻一点"></textarea>
-              <button class="send-btn" id="heroSend" aria-label="发送需求">分析</button>
-            </div>
-            <div class="quick-prompts">
-              <button data-query="推荐一款 500 元以内、适合通勤的防水轻量双肩包">通勤双肩包</button>
-              <button data-query="预算 700 元，想买主动降噪、长续航的蓝牙耳机">降噪耳机</button>
-              <button data-query="500 元左右的日常慢跑鞋，要缓震、透气、耐磨">日常跑鞋</button>
-            </div>
-          </div>
+    <div class="app">
+        <!-- Left Icon Bar -->
+        <div class="icon-bar">
+            <button class="icon-btn active" id="btnHome" title="Home" onclick="showHome()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </button>
+            <button class="icon-btn" id="btnHistory" title="History" onclick="openPanel('history')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+            <button class="icon-btn" id="btnSettings" title="Settings" onclick="openPanel('settings')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+            <div style="flex:1;"></div>
+            <button class="icon-btn" title="New Chat" onclick="newChat()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
         </div>
 
-        <div class="chat-stream" id="chatStream"></div>
-        <div class="composer hidden" id="composer">
-          <div class="composer-inner">
-            <textarea id="chatInput" rows="1" maxlength="500" placeholder="继续补充预算、用途或偏好…"></textarea>
-            <button class="send-btn" id="chatSend">发送</button>
-          </div>
-          <small>AI 建议仅用于课程演示，购买前请核对实际商品信息。</small>
-        </div>
-      </section>
-    </main>
-  </div>
+        <!-- Main -->
+        <div class="main" id="mainArea">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="logo">Smart <span>Shopping</span> AI</div>
+                <div class="user-avatar">U</div>
+            </div>
 
-  <div class="drawer-backdrop hidden" id="drawerBackdrop"></div>
-  <aside class="settings-drawer" id="settingsDrawer" aria-hidden="true">
-    <div class="drawer-head"><div><span>个人化配置</span><h2>购物偏好</h2></div><button id="closeSettings" aria-label="关闭">×</button></div>
-    <form id="preferenceForm">
-      <label>偏好品牌<input id="brandPrefs" placeholder="例如：SoundPeak, PaceFlow"></label>
-      <label>希望避开的特点<input id="avoidPrefs" placeholder="例如：偏重, 漏音, 不耐脏"></label>
-      <label>价格敏感度 <output id="priceOutput">50%</output><input id="priceSensitivity" type="range" min="0" max="100" value="50"></label>
-      <fieldset>
-        <legend>决策风格</legend>
-        <label class="radio-card"><input type="radio" name="style" value="conservative">稳健优先 <span>更关注可信度与风险</span></label>
-        <label class="radio-card"><input type="radio" name="style" value="balanced" checked>均衡决策 <span>质量、价格与匹配度平衡</span></label>
-        <label class="radio-card"><input type="radio" name="style" value="aggressive">性能优先 <span>更愿意为功能付费</span></label>
-      </fieldset>
-      <button class="primary-wide" type="submit">保存偏好</button>
-    </form>
-  </aside>
-  <div class="toast" id="toast" role="status"></div>
-  <script src="/app.js" defer></script>
+            <!-- Content -->
+            <div class="content" id="content">
+                <!-- Home View -->
+                <div class="home-view" id="homeView">
+                    <div class="greeting">Hello, how can I <strong>help you shop?</strong></div>
+                    <div class="input-bar">
+                        <input type="text" id="homeInput" placeholder="What are you shopping for?" onkeypress="if(event.key==='Enter')sendFromHome()">
+                        <button class="input-bar-btn" onclick="sendFromHome()">&#8593;</button>
+                    </div>
+                    <div class="chips">
+                        <div class="chip" onclick="quickAsk('Show me Kids Backpack')">Kids Backpack</div>
+                        <div class="chip" onclick="quickAsk('Show me Headphones')">Headphones</div>
+                        <div class="chip" onclick="quickAsk('Show me Running Shoes')">Running Shoes</div>
+                        <div class="chip" onclick="quickAsk('Show me Tablet')">Tablet</div>
+                        <div class="chip" onclick="quickAsk('Show me Keyboard')">Keyboard</div>
+                        <div class="chip" onclick="quickAsk('Show me Smart Watch')">Smart Watch</div>
+                    </div>
+                </div>
+
+                <!-- Chat View -->
+                <div class="chat-view" id="chatView">
+                    <div id="chatMessages"></div>
+                    <div class="loading hidden" id="loading">Analyzing reviews<span>.</span><span>.</span><span>.</span></div>
+                    <div class="decision-panel" id="decisionPanel"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Input (shown in chat mode) -->
+            <div class="bottom-input hidden" id="bottomInput">
+                <div class="bottom-input-inner">
+                    <input type="text" id="chatInput" placeholder="Continue the conversation..." onkeypress="if(event.key==='Enter')sendFromChat()">
+                    <button class="bottom-send" onclick="sendFromChat()">&#8593;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Overlay -->
+    <div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+
+    <!-- Right Slide Panel -->
+    <div class="slide-panel" id="slidePanel">
+        <div class="panel-header">
+            <div class="panel-title" id="panelTitle">History</div>
+            <button class="panel-close" onclick="closePanel()">&times;</button>
+        </div>
+        <div class="panel-body" id="panelBody">
+            <!-- Dynamic content -->
+        </div>
+    </div>
+
+    <div id="toastArea"></div>
+
+<script>
+// Product data is served by /api/original/chat.
+// ── STATE ──
+let state = JSON.parse(localStorage.getItem('ssai_state') || '{}');
+if (!state.sessions) {
+    state = {
+        sessions: {},
+        messages: [],
+        hasInteracted: false,
+        currentSessionId: generateId(),
+        lastDecision: null,
+        preferences: { brands: [], avoid: "", price_sensitivity: 50, decision_style: "Balanced" }
+    };
+}
+state.userId = state.userId || localStorage.getItem('ssai_user_id') || `user_${crypto.randomUUID().slice(0, 8)}`;
+localStorage.setItem('ssai_user_id', state.userId);
+function generateId() { return Math.random().toString(36).substring(2, 10); }
+function persistState() { localStorage.setItem('ssai_state', JSON.stringify(state)); }
+function escapeHtml(value = '') { return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+async function api(path, options = {}) {
+    const response = await fetch(path, { headers: {'Content-Type': 'application/json'}, ...options });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.detail || 'Service is temporarily unavailable');
+    return body;
+}
+
+// ── PANEL SYSTEM ──
+let currentPanel = null;
+
+function openPanel(type) {
+    currentPanel = type;
+    document.getElementById('panelOverlay').classList.add('active');
+    document.getElementById('slidePanel').classList.add('active');
+    document.getElementById('bottomInput').classList.add('panel-open');
+
+    if (type === 'history') {
+        document.getElementById('panelTitle').textContent = 'Session History';
+        renderHistoryPanel();
+    } else if (type === 'settings') {
+        document.getElementById('panelTitle').textContent = 'Preferences & Settings';
+        renderSettingsPanel();
+    }
+
+    // Update active icon
+    document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('active'));
+    if (type === 'history') document.getElementById('btnHistory').classList.add('active');
+    if (type === 'settings') document.getElementById('btnSettings').classList.add('active');
+}
+
+function closePanel() {
+    currentPanel = null;
+    document.getElementById('panelOverlay').classList.remove('active');
+    document.getElementById('slidePanel').classList.remove('active');
+    document.getElementById('bottomInput').classList.remove('panel-open');
+
+    // Restore active icon based on view
+    document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('active'));
+    const isHome = !state.hasInteracted;
+    if (isHome) {
+        document.getElementById('btnHome').classList.add('active');
+    }
+}
+
+// ── HISTORY PANEL ──
+function renderHistoryPanel() {
+    const container = document.getElementById('panelBody');
+    const sessionIds = Object.keys(state.sessions);
+
+    if (sessionIds.length === 0) {
+        container.innerHTML = `
+            <div class="session-empty">
+                <div style="font-size: 36px; margin-bottom: 12px;">&#128209;</div>
+                <div>No saved sessions yet</div>
+                <div style="font-size: 12px; margin-top: 8px;">Your conversation history will appear here</div>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="session-list">';
+    // Sort by timestamp descending
+    const sorted = sessionIds.sort((a, b) => {
+        const ta = state.sessions[a].ts || '';
+        const tb = state.sessions[b].ts || '';
+        return tb.localeCompare(ta);
+    });
+
+    sorted.forEach(id => {
+        const s = state.sessions[id];
+        html += `
+            <div class="session-item" onclick="loadSession('${id}')">
+                <div class="session-info">
+                    <div class="session-title">${s.title || 'Untitled Session'}</div>
+                    <div class="session-time">${s.ts || 'Just now'}</div>
+                </div>
+                <button class="session-delete" onclick="event.stopPropagation(); deleteSession('${id}')" title="Delete session">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function loadSession(id) {
+    const s = state.sessions[id];
+    if (!s) return;
+
+    state.currentSessionId = id;
+    state.messages = s.messages ? [...s.messages] : [];
+    state.lastDecision = s.decision || null;
+    state.hasInteracted = state.messages.length > 0;
+    persistState();
+
+    showChat();
+    renderChatMessages();
+    if (state.lastDecision) {
+        renderDecisionPanel(state.lastDecision);
+    }
+    closePanel();
+    showToast('Session loaded', 'success');
+}
+
+function deleteSession(id) {
+    if (!confirm('Delete this session? This cannot be undone.')) return;
+    const wasCurrent = id === state.currentSessionId;
+    delete state.sessions[id];
+    // If we deleted the currently active session, wipe the chat and go home
+    if (wasCurrent) {
+        state.messages = [];
+        state.lastDecision = null;
+        state.hasInteracted = false;
+        state.currentSessionId = generateId();
+        document.getElementById('chatMessages').innerHTML = '';
+        document.getElementById('decisionPanel').innerHTML = '';
+        showHome();
+    }
+    persistState();
+    renderHistoryPanel();
+    showToast('Session deleted', 'info');
+}
+
+// ── SETTINGS PANEL ──
+function renderSettingsPanel() {
+    const container = document.getElementById('panelBody');
+    const prefs = state.preferences || { brands: [], avoid: "", price_sensitivity: 50, decision_style: "Balanced" };
+
+    const brandsText = prefs.brands ? prefs.brands.join(', ') : '';
+    const styleOptions = [
+        { value: 'Conservative', label: 'Conservative - Safety first, proven brands only', desc: 'Prioritize reliability and brand reputation' },
+        { value: 'Balanced', label: 'Balanced - Value vs. quality equilibrium', desc: 'Consider both price and performance equally' },
+        { value: 'Aggressive', label: 'Aggressive - Maximize features per dollar', desc: 'Prioritize specs and features even from newer brands' }
+    ];
+
+    let html = '';
+
+    // ── Brand Preferences ──
+    html += `<div class="setting-section">`;
+    html += `<label class="setting-label">Preferred Brands</label>`;
+    html += `<div class="setting-desc">Enter brand names separated by commas (e.g., Sony, Apple, Nike)</div>`;
+    html += `<input type="text" class="setting-input" id="prefBrands" placeholder="Sony, Apple, Nike..." value="${brandsText}">`;
+    html += `</div>`;
+
+    // ── Avoid Keywords ──
+    html += `<div class="setting-section">`;
+    html += `<label class="setting-label">Red Flags / Avoid</label>`;
+    html += `<div class="setting-desc">Products containing these keywords will be filtered out</div>`;
+    html += `<input type="text" class="setting-input" id="prefAvoid" placeholder="refurbished, generic, no-brand..." value="${prefs.avoid || ''}">`;
+    html += `</div>`;
+
+    // ── Price Sensitivity ──
+    html += `<div class="setting-section">`;
+    html += `<label class="setting-label">Price Sensitivity</label>`;
+    html += `<div class="setting-desc">How much does price influence your decision?</div>`;
+    html += `<div class="slider-row">`;
+    html += `<input type="range" class="slider" id="prefPrice" min="0" max="100" value="${prefs.price_sensitivity || 50}" oninput="document.getElementById('priceValue').textContent = this.value + '%'">`;
+    html += `<span class="slider-value" id="priceValue">${prefs.price_sensitivity || 50}%</span>`;
+    html += `</div></div>`;
+
+    // ── Decision Style ──
+    html += `<div class="setting-section">`;
+    html += `<label class="setting-label">Decision Style</label>`;
+    html += `<div class="radio-group">`;
+    styleOptions.forEach(opt => {
+        const selected = prefs.decision_style === opt.value ? 'selected' : '';
+        html += `<div class="radio-item ${selected}" data-value="${opt.value}" onclick="selectStyle(this, '${opt.value}')">`;
+        html += `<div class="radio-dot"></div>`;
+        html += `<div><div style="font-weight:500;">${opt.label}</div><div style="font-size:11px;color:#9CA3AF;margin-top:2px;">${opt.desc}</div></div>`;
+        html += `</div>`;
+    });
+    html += `</div></div>`;
+
+    html += `<button class="btn-primary" onclick="savePreferences()">Save Preferences</button>`;
+
+    html += `<div class="divider"></div>`;
+
+    // ── Data Management ──
+    html += `<div class="danger-zone">`;
+    html += `<div class="danger-zone-title">Data Management</div>`;
+    html += `<div class="danger-zone-desc">Clear all stored data including sessions and preferences. This action cannot be undone.</div>`;
+    html += `<button class="btn-secondary" onclick="clearAllData()" style="margin-bottom:8px;">Clear All Data</button>`;
+    html += `<button class="btn-danger" onclick="clearAllMemory()">Clear All Memory & Sessions</button>`;
+    html += `</div>`;
+
+    container.innerHTML = html;
+}
+
+function selectStyle(el, value) {
+    document.querySelectorAll('.radio-item').forEach(item => item.classList.remove('selected'));
+    el.classList.add('selected');
+    el.dataset.value = value;
+}
+
+async function savePreferences() {
+    const brandsInput = document.getElementById('prefBrands').value;
+    const brands = brandsInput.split(',').map(b => b.trim()).filter(b => b);
+    const avoid = document.getElementById('prefAvoid').value;
+    const priceSensitivity = parseInt(document.getElementById('prefPrice').value);
+    const selectedStyleEl = document.querySelector('.radio-item.selected');
+    const decisionStyle = selectedStyleEl ? selectedStyleEl.dataset.value : 'Balanced';
+
+    state.preferences = { brands, avoid, price_sensitivity: priceSensitivity, decision_style: decisionStyle };
+    persistState();
+    try {
+        await api(`/api/preferences/${state.userId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                brands,
+                avoid_terms: avoid.split(/[,，、]/).map(value => value.trim()).filter(Boolean),
+                price_sensitivity: priceSensitivity,
+                decision_style: decisionStyle.toLowerCase(),
+            }),
+        });
+        showToast('Preferences saved successfully', 'success');
+        closePanel();
+    } catch (error) {
+        showToast(`Could not save preferences: ${error.message}`, 'error');
+    }
+}
+
+async function loadPreferencesFromBackend() {
+    try {
+        const prefs = await api(`/api/preferences/${state.userId}`);
+        state.preferences = {
+            brands: prefs.brands || [],
+            avoid: (prefs.avoid_terms || []).join(', '),
+            price_sensitivity: prefs.price_sensitivity ?? 50,
+            decision_style: (prefs.decision_style || 'balanced').replace(/^./, value => value.toUpperCase()),
+        };
+        persistState();
+    } catch (_) {
+        // The original interface remains usable if the backend is waking up.
+    }
+}
+
+function clearAllData() {
+    if (!confirm('This will delete all sessions AND reset preferences. Continue?')) return;
+    state.sessions = {};
+    state.messages = [];
+    state.lastDecision = null;
+    state.hasInteracted = false;
+    state.currentSessionId = generateId();
+    state.preferences = { brands: [], avoid: "", price_sensitivity: 50, decision_style: "Balanced" };
+    document.getElementById('chatMessages').innerHTML = '';
+    document.getElementById('decisionPanel').innerHTML = '';
+    persistState();
+    showHome();
+    closePanel();
+    showToast('All data cleared', 'info');
+}
+
+function clearAllMemory() {
+    if (!confirm('WARNING: This will erase EVERYTHING including all conversations and settings. This cannot be undone!')) return;
+    localStorage.removeItem('ssai_state');
+    state = {
+        sessions: {},
+        messages: [],
+        hasInteracted: false,
+        currentSessionId: generateId(),
+        lastDecision: null,
+        preferences: { brands: [], avoid: "", price_sensitivity: 50, decision_style: "Balanced" }
+    };
+    showHome();
+    closePanel();
+    showToast('All memory cleared. Starting fresh.', 'info');
+}
+
+// ── NAVIGATION ──
+function showHome() {
+    document.getElementById('homeView').classList.remove('hidden');
+    document.getElementById('chatView').classList.remove('active');
+    document.getElementById('bottomInput').classList.add('hidden');
+    document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('btnHome').classList.add('active');
+    state.hasInteracted = false;
+    persistState();
+}
+
+function showChat() {
+    document.getElementById('homeView').classList.add('hidden');
+    document.getElementById('chatView').classList.add('active');
+    document.getElementById('bottomInput').classList.remove('hidden');
+    document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('active'));
+}
+
+// ── SEND MESSAGE ──
+function sendFromHome() { const input = document.getElementById('homeInput'); const text = input.value.trim(); if (!text) return; input.value = ''; processMessage(text); }
+function sendFromChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if (!text) return; input.value = ''; processMessage(text); }
+function quickAsk(text) { processMessage(text); }
+
+async function processMessage(text) {
+    showChat();
+    state.hasInteracted = true;
+    state.messages.push({role:'user',content:text});
+    renderChatMessages();
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('decisionPanel').innerHTML = '';
+    try {
+        const payload = await api('/api/original/chat', {
+            method: 'POST',
+            body: JSON.stringify({
+                user_input: text,
+                user_id: state.userId,
+                session_id: state.currentSessionId,
+            }),
+        });
+        document.getElementById('loading').classList.add('hidden');
+        if (payload.status !== 'success') {
+            state.messages.push({role:'assistant', content: escapeHtml(payload.message || 'Please choose a product category.')});
+            renderChatMessages();
+            persistState();
+            return;
+        }
+        const result = payload.result;
+        state.lastDecision = result;
+        const top = result.recs[0];
+        const reply = `Found <strong>${result.recs.length}</strong> great options for <strong>${result.cat}</strong>!<br><br><strong>Top Pick:</strong> ${top.title}<br><strong>$${top.price}</strong> | <strong>${top.rating}</strong>/5 | Score: <strong>${top.score}</strong><br><br>Detailed analysis below:`;
+        state.messages.push({role:'assistant',content:reply});
+        saveSession();
+        renderChatMessages();
+        renderDecisionPanel(result);
+        persistState();
+    } catch (error) {
+        document.getElementById('loading').classList.add('hidden');
+        state.messages.push({role:'assistant', content: `Service error: ${escapeHtml(error.message)}`});
+        renderChatMessages();
+        persistState();
+    }
+}
+
+function renderChatMessages() {
+    const container = document.getElementById('chatMessages');
+    container.innerHTML = state.messages.map(m => {
+        if (m.role === 'user') return `<div class="msg msg-user">${escapeHtml(m.content)}</div>`;
+        return `<div class="msg msg-ai">${m.content}</div>`;
+    }).join('');
+    const content = document.getElementById('content');
+    content.scrollTop = content.scrollHeight;
+}
+
+// ── SESSION ──
+function saveSession() {
+    const msgs = state.messages;
+    let title = "New Session";
+    for (const m of msgs) {
+        if (m.role === 'user') {
+            title = m.content.substring(0, 25) + (m.content.length > 25 ? '...' : '');
+            break;
+        }
+    }
+    state.sessions[state.currentSessionId] = {
+        title,
+        messages: [...msgs],
+        decision: state.lastDecision,
+        ts: new Date().toLocaleString()
+    };
+    persistState();
+}
+
+function newChat() {
+    saveSession();
+    state.currentSessionId = generateId();
+    state.messages = [];
+    state.lastDecision = null;
+    state.hasInteracted = false;
+    showHome();
+    persistState();
+    showToast('New chat started', 'success');
+    closePanel();
+}
+
+// ── DECISION PANEL (5 zones) ──
+function renderDecisionPanel(result) {
+    const panel = document.getElementById('decisionPanel');
+    let html = '';
+
+    // Zone 1: Demand & User Profile
+    const profile = result.user_profile || {};
+    html += `<div class="zone"><h3>1. Demand Analysis & User Profile</h3>`;
+    html += `<div class="profile-grid">`;
+    html += `<div class="profile-item"><strong>Primary Use:</strong> ${profile.primary_use || 'General'}</div>`;
+    html += `<div class="profile-item"><strong>Age Group:</strong> ${profile.age_group || 'All ages'}</div>`;
+    html += `<div class="profile-item"><strong>Budget Range:</strong> ${profile.budget_range || 'Flexible'}</div></div>`;
+    if (profile.key_concerns) html += `<div class="profile-item" style="margin-top:8px;"><strong>Key Concerns:</strong> ${profile.key_concerns.join(', ')}</div>`;
+    html += `<div class="info-box" style="margin-top:12px;">${result.demand}</div></div>`;
+
+    // Zone 2: Market Overview
+    const market = result.market_analysis;
+    if (market) {
+        html += `<div class="zone"><h3>2. Market Overview</h3>`;
+        html += `<div class="metrics-row">`;
+        html += `<div class="metric-card"><div class="metric-value">${market.price_range}</div><div class="metric-label">Price Range</div></div>`;
+        html += `<div class="metric-card"><div class="metric-value">${market.avg_rating}</div><div class="metric-label">Average Rating</div></div>`;
+        html += `<div class="metric-card"><div class="metric-value">${market.total_reviews_analyzed.toLocaleString()}</div><div class="metric-label">Reviews Analyzed</div></div></div>`;
+        if (market.key_trends) { html += `<h4>Key Market Trends</h4><ul style="font-size:13px;color:#6B7280;">`; market.key_trends.forEach(t => html += `<li>${t}</li>`); html += `</ul>`; }
+        html += `</div>`;
+    }
+
+    // Zone 3: Top 3 with Deep Analytics
+    html += `<div style="margin-bottom:16px;"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px;">3. Top 3 Product Recommendations</h3>`;
+    html += `<p style="font-size:12px;color:#6B7280;margin-bottom:12px;">Each product evaluated across 4 dimensions: Value, Durability, Features, and User Satisfaction</p>`;
+    result.recs.slice(0, 3).forEach((rec, idx) => { html += renderProductDeepCard(rec, result.icon, idx + 1); });
+    html += `</div>`;
+
+    // Zone 4: Comparison
+    const comp = result.comp;
+    if (comp) {
+        html += `<div class="zone"><h3>4. Multi-dimensional Comparison</h3>`;
+        html += `<table class="comp-table"><thead><tr><th>Product</th><th>Price ($)</th><th>Match %</th><th>Reputation</th><th>Value</th><th>Overall</th></tr></thead><tbody>`;
+        for (let i = 0; i < comp.products.length; i++) {
+            const bg = i % 2 === 0 ? '#FFFFFF' : '#F8F9FA';
+            html += `<tr style="background:${bg}"><td><strong>${comp.products[i]}</strong></td><td>$${comp.price[i].toFixed(2)}</td><td>${comp.match[i]}%</td><td>${comp.reputation[i]}%</td><td>${comp.value[i]}%</td><td><strong>${comp.overall[i].toFixed(1)}</strong></td></tr>`;
+        }
+        html += `</tbody></table>`;
+        html += `<p style="font-size:12px;color:#6B7280;margin-top:8px;">Scoring: Match 30% + Reputation 25% + Value 20% + Price 25%</p></div>`;
+    }
+
+    // Zone 5: Personalized Analysis
+    const personalized = result.personalized_analysis;
+    if (personalized) {
+        html += `<div class="zone"><h3>5. Personalized Analysis</h3>`;
+        for (const [key, value] of Object.entries(personalized)) {
+            const title = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            html += `<p style="font-size:14px;margin-bottom:8px;"><strong style="color:#374151;">${title}:</strong> ${value}</p>`;
+        }
+        html += `</div>`;
+    }
+
+    // Zone 6: Risk Assessment
+    const risk = result.risk_assessment;
+    if (risk) {
+        html += `<div class="zone"><h3>6. Risk Assessment</h3>`;
+        for (const [key, value] of Object.entries(risk)) {
+            const title = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            let riskColor = '#6B7280';
+            if (value.includes('Low')) riskColor = '#059669';
+            if (value.includes('Medium')) riskColor = '#D97706';
+            if (value.includes('High')) riskColor = '#DC2626';
+            html += `<p style="font-size:14px;margin-bottom:8px;"><strong style="color:#374151;">${title}:</strong> <span style="color:${riskColor};">${value}</span></p>`;
+        }
+        html += `</div>`;
+    }
+
+    // Zone 7: Final Recommendation
+    const topRec = result.recs[0];
+    const pref = state.preferences || {};
+    const priceWeight = (pref.price_sensitivity || 50) / 100;
+    const recClass = topRec.score >= 85 ? 'rec-success' : 'rec-warning';
+    html += `<div class="${recClass}"><strong>Final Recommendation</strong><br>`;
+    if (pref.decision_style === 'Conservative') {
+        html += `<span class="rec-tag">Conservative mode:</span> Prioritizing proven reliability and brand reputation.`;
+    } else if (pref.decision_style === 'Aggressive') {
+        html += `<span class="rec-tag">Aggressive mode:</span> Maximizing features and value per dollar spent.`;
+    } else {
+        html += `<span class="rec-tag">Balanced mode:</span> Optimal equilibrium between price, quality, and features.`;
+    }
+    html += `<br><br><strong>${topRec.title}</strong> — $${topRec.price} | Score: ${topRec.score}/100<br>`;
+    html += `<a href="${topRec.url}" class="btn-amazon" target="_blank">View on Amazon</a></div>`;
+
+    panel.innerHTML = html;
+}
+
+function renderProductDeepCard(rec, icon, rank) {
+    const a = rec.analytics;
+    let html = `<div class="product-deep">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">`;
+    html += `<span style="font-size:13px;font-weight:700;color:white;background:${rec.color};padding:2px 10px;border-radius:12px;">#${rank}</span>`;
+    if (rec.badge) html += `<span class="badge" style="background:${rec.color}15;color:${rec.color};">${rec.badge}</span>`;
+    html += `</div>`;
+    html += `<div class="product-header">`;
+    html += `<div class="product-img" style="background:${rec.color}15;">${icon}</div>`;
+    html += `<div style="flex:1;min-width:0;"><div class="product-title">${rec.title}</div>`;
+    html += `<div class="product-price">$${rec.price}</div>`;
+    html += `<div class="product-meta">${rec.rating}/5 · ${rec.reviews.toLocaleString()} reviews · Score: ${rec.score}</div></div></div>`;
+
+    // 4-Dimension Score
+    if (a) {
+        html += `<div style="font-size:12px;font-weight:600;color:#6B7280;margin:8px 0 6px;">4-Dimension Score</div>`;
+        html += `<div class="dim-grid">`;
+        const dims = [
+            { label: 'Value', score: a.value_score, color: '#10B981' },
+            { label: 'Durability', score: a.durability_score, color: '#3B82F6' },
+            { label: 'Features', score: a.feature_score, color: '#8B5CF6' },
+            { label: 'Satisfaction', score: a.user_satisfaction, color: '#F59E0B' }
+        ];
+        dims.forEach(d => {
+            html += `<div class="dim-card"><div class="dim-score" style="color:${d.color};">${d.score}</div><div class="dim-label">${d.label}</div><div class="dim-bar"><div class="dim-fill" style="width:${d.score}%;background:${d.color};"></div></div></div>`;
+        });
+        html += `</div>`;
+
+        // Price Tier & Sentiment
+        html += `<div style="display:flex;gap:12px;margin:8px 0;">`;
+        html += `<span style="font-size:12px;color:#6B7280;background:#F3F4F6;padding:4px 10px;border-radius:6px;">Price Tier: ${a.price_tier}</span>`;
+        html += `</div>`;
+
+        // Review Sentiment
+        if (a.review_sentiment) {
+            const s = a.review_sentiment;
+            html += `<div style="font-size:12px;font-weight:600;color:#6B7280;margin:8px 0 6px;">Review Sentiment</div>`;
+            html += `<div class="sentiment-row">`;
+            html += `<div class="sent-card sent-positive"><div class="sent-value" style="color:#059669;">${s.positive}%</div><div class="sent-label">Positive</div></div>`;
+            html += `<div class="sent-card sent-neutral"><div class="sent-value" style="color:#6B7280;">${s.neutral}%</div><div class="sent-label">Neutral</div></div>`;
+            html += `<div class="sent-card sent-negative"><div class="sent-value" style="color:#DC2626;">${s.negative}%</div><div class="sent-label">Negative</div></div>`;
+            html += `</div>`;
+        }
+
+        // Top Keywords
+        if (a.top_keywords) {
+            html += `<div style="font-size:12px;font-weight:600;color:#6B7280;margin:8px 0 6px;">Top Keywords</div>`;
+            html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">`;
+            a.top_keywords.forEach(kw => {
+                html += `<span style="font-size:11px;background:#EFF6FF;color:#2563EB;padding:3px 10px;border-radius:12px;">${kw}</span>`;
+            });
+            html += `</div>`;
+        }
+
+        // Pros/Cons Detail
+        const prosDetail = a.pros_detail || [];
+        const consDetail = a.cons_detail || [];
+        html += `<div style="margin-top:8px;">`;
+        if (prosDetail.length) { html += `<div style="font-size:12px;font-weight:600;color:#059669;margin-bottom:4px;">Advantages</div><ul style="font-size:12px;color:#374151;margin-bottom:8px;padding-left:16px;">`; prosDetail.forEach(p => html += `<li>${p}</li>`); html += `</ul>`; }
+        if (consDetail.length) { html += `<div style="font-size:12px;font-weight:600;color:#DC2626;margin-bottom:4px;">Concerns</div><ul style="font-size:12px;color:#374151;padding-left:16px;">`; consDetail.forEach(c => html += `<li>${c}</li>`); html += `</ul>`; }
+        html += `</div>`;
+    }
+
+    html += `<a href="${rec.url}" class="btn-amazon" target="_blank">View on Amazon</a>`;
+    html += `</div>`;
+    return html;
+}
+
+// ── TOAST ──
+function showToast(msg, type) {
+    const area = document.getElementById('toastArea');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = msg;
+    area.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// ── INIT ──
+if (state.hasInteracted && state.messages.length > 0) {
+    showChat();
+    renderChatMessages();
+    if (state.lastDecision) renderDecisionPanel(state.lastDecision);
+} else {
+    showHome();
+}
+loadPreferencesFromBackend();
+</script>
 </body>
 </html>

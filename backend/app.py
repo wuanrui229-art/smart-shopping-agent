@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from algorithm import ShoppingPipeline
+from algorithm.original_demo import recommend_original
 from backend import database
 from backend.schemas import CartRequest, ChatRequest, PreferenceRequest
 
@@ -40,6 +41,26 @@ app.add_middleware(
 @app.get("/api/health")
 def health() -> dict:
     return {"status": "ok", "service": "shopping-agent", "llm_enabled": pipeline.llm.enabled, "model": pipeline.llm.model if pipeline.llm.enabled else None}
+
+
+@app.post("/api/original/chat")
+def original_chat(request: ChatRequest) -> dict:
+    database.ensure_session(request.user_id, request.session_id, request.user_input)
+    database.save_message(request.session_id, "user", request.user_input)
+    preferences = database.get_preferences(request.user_id)
+    result = recommend_original(request.user_input, preferences=preferences)
+    if result["status"] == "needs_clarification":
+        message = result["message"]
+    else:
+        top = result["recs"][0]
+        message = (
+            f"Found {len(result['recs'])} great options for {result['cat']}! "
+            f"Top Pick: {top['title']} — ${top['price']:.2f}, score {top['score']:.1f}."
+        )
+        database.set_last_demand(request.session_id, {"category": result["category"], "query": request.user_input})
+    payload = {"status": result["status"], "message": message, "result": result}
+    database.save_message(request.session_id, "assistant", message, payload)
+    return payload
 
 
 @app.post("/api/chat")

@@ -21,6 +21,19 @@ def test_health_and_chat(tmp_path):
         assert sessions[0]["session_id"] == "s1"
 
 
+def test_original_week7_chat_endpoint(tmp_path):
+    with make_client(tmp_path) as client:
+        response = client.post(
+            "/api/original/chat",
+            json={"user_input": "Show me Headphones", "user_id": "original-user", "session_id": "original-session"},
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["status"] == "success"
+        assert payload["result"]["cat"] == "Headphones"
+        assert len(payload["result"]["recs"]) == 3
+
+
 def test_preferences_round_trip(tmp_path):
     with make_client(tmp_path) as client:
         payload = {"brands": ["SoundPeak"], "avoid_terms": ["漏音"], "price_sensitivity": 75, "decision_style": "conservative"}
