@@ -6,6 +6,8 @@
 
 ## 在线部署
 
+**公开 Demo：** [https://smart-shopping-agent-wuanrui229-art.onrender.com](https://smart-shopping-agent-wuanrui229-art.onrender.com)
+
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fwuanrui229-art%2Fsmart-shopping-agent)
 
 点击上方按钮可把完整的前端、FastAPI 后端和推荐算法部署为公开 Render Web Service。仓库已提供 `render.yaml`，部署时会自动安装依赖、启动服务并检查 `/api/health`。
