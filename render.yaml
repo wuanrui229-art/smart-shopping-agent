@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: smart-shopping-agent-wuanrui229-art
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: SHOPPING_DB_PATH
+        value: /tmp/shopping_agent.db

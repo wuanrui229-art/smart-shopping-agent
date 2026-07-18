@@ -4,6 +4,14 @@
 
 运行环境要求：Python 3.9 或更高版本。
 
+## 在线部署
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fwuanrui229-art%2Fsmart-shopping-agent)
+
+点击上方按钮可把完整的前端、FastAPI 后端和推荐算法部署为公开 Render Web Service。仓库已提供 `render.yaml`，部署时会自动安装依赖、启动服务并检查 `/api/health`。
+
+免费实例适合作业和论文演示：闲置一段时间后会休眠，首次访问可能需要等待约一分钟。演示数据使用临时 SQLite 文件，服务休眠、重启或重新部署后，历史会话和偏好可能被清空。未配置 `OPENAI_API_KEY` 时系统自动使用离线规则算法，主要演示流程仍可完整运行。
+
 ## 一、系统包含什么
 
 - **前端**：原生 HTML/CSS/JavaScript，实现聊天、历史会话、偏好设置、需求解析展示、Top 3 推荐、评分审计、横向对比和授权式演示加购。
