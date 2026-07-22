@@ -103,7 +103,11 @@ class OpenCatalogChatClient:
             data = json.loads(content)
             return self._normalize(data, user_input, preferences or {}, model=model)
         except HTTPError as error:
-            print(f"open_catalog_llm_error status={error.code}")
+            try:
+                detail = error.read().decode("utf-8", errors="replace")[:500].replace("\n", " ")
+            except Exception:
+                detail = "unavailable"
+            print(f"open_catalog_llm_error status={error.code} detail={detail}")
             return None
         except (URLError, TimeoutError, ValueError, KeyError, TypeError) as error:
             print(f"open_catalog_llm_error type={type(error).__name__}")
