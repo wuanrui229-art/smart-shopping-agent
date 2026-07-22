@@ -6,7 +6,7 @@ from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -52,14 +52,23 @@ app.add_middleware(
 )
 
 
+def _runtime_oidc_token(request: Request) -> str:
+    return request.headers.get("x-vercel-oidc-token", "").strip()
+
+
 @app.get("/api/health")
-def health() -> dict:
+def health(request: Request) -> dict:
+    runtime_gateway_enabled = bool(_runtime_oidc_token(request))
     return {
         "status": "ok",
         "service": "shopping-agent",
-        "llm_enabled": open_catalog.enabled or pipeline.llm.enabled,
-        "model": open_catalog.model if open_catalog.enabled else (pipeline.llm.model if pipeline.llm.enabled else None),
-        "open_catalog_enabled": open_catalog.enabled,
+        "llm_enabled": runtime_gateway_enabled or open_catalog.enabled or pipeline.llm.enabled,
+        "model": (
+            "openai/gpt-5.4-mini"
+            if runtime_gateway_enabled
+            else (open_catalog.model if open_catalog.enabled else (pipeline.llm.model if pipeline.llm.enabled else None))
+        ),
+        "open_catalog_enabled": runtime_gateway_enabled or open_catalog.enabled,
     }
 
 
@@ -99,20 +108,25 @@ def _request_preferences(request: ChatRequest) -> dict:
     return database.get_preferences(request.user_id)
 
 
-def _recommend_for_request(request: ChatRequest, preferences: dict) -> dict:
+def _recommend_for_request(request: ChatRequest, preferences: dict, runtime_oidc_token: str = "") -> dict:
     history = [item.model_dump() for item in request.history]
-    llm_result = open_catalog.respond(request.user_input, history=history, preferences=preferences)
+    llm_result = open_catalog.respond(
+        request.user_input,
+        history=history,
+        preferences=preferences,
+        runtime_oidc_token=runtime_oidc_token,
+    )
     return llm_result or recommend_original(request.user_input, preferences=preferences)
 
 
 @app.post("/api/original/chat")
-def original_chat(request: ChatRequest) -> dict:
+def original_chat(request: ChatRequest, http_request: Request) -> dict:
     started_at = perf_counter()
     request_id = uuid4().hex[:10]
     database.ensure_session(request.user_id, request.session_id, request.user_input)
     database.save_message(request.session_id, "user", request.user_input)
     preferences = _request_preferences(request)
-    result = _recommend_for_request(request, preferences)
+    result = _recommend_for_request(request, preferences, _runtime_oidc_token(http_request))
     return _finish_original_chat(request, result, request_id, started_at, "http-json")
 
 
@@ -121,7 +135,7 @@ def _ndjson_event(event_type: str, request_id: str, **data: object) -> bytes:
 
 
 @app.post("/api/original/chat/stream")
-async def original_chat_stream(request: ChatRequest) -> StreamingResponse:
+async def original_chat_stream(request: ChatRequest, http_request: Request) -> StreamingResponse:
     async def generate():
         started_at = perf_counter()
         request_id = uuid4().hex[:10]
@@ -147,7 +161,7 @@ async def original_chat_stream(request: ChatRequest) -> StreamingResponse:
                 message=f"Detected category · {category_name}",
             )
 
-            result = _recommend_for_request(request, preferences)
+            result = _recommend_for_request(request, preferences, _runtime_oidc_token(http_request))
             if result["status"] == "success":
                 if result.get("mode") == "llm-open-catalog":
                     yield _ndjson_event(

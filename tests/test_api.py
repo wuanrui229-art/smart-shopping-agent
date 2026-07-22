@@ -3,7 +3,7 @@ import json
 from fastapi.testclient import TestClient
 
 from backend import database
-from backend.app import app
+from backend.app import app, open_catalog
 
 
 def make_client(tmp_path):
@@ -21,6 +21,33 @@ def test_health_and_chat(tmp_path):
         assert response.json()["status"] == "success"
         sessions = client.get("/api/sessions/u1").json()
         assert sessions[0]["session_id"] == "s1"
+
+
+def test_vercel_runtime_oidc_header_enables_open_catalog(tmp_path, monkeypatch):
+    captured = {}
+
+    def fake_respond(user_input, history, preferences, runtime_oidc_token):
+        captured["token"] = runtime_oidc_token
+        return {
+            "status": "conversation",
+            "message": "你好，我可以帮你比较任意消费品类。",
+            "mode": "llm-open-chat",
+            "model": "openai/gpt-5.4-mini",
+        }
+
+    monkeypatch.setattr(open_catalog, "respond", fake_respond)
+    headers = {"x-vercel-oidc-token": "test-runtime-token"}
+    with make_client(tmp_path) as client:
+        health = client.get("/api/health", headers=headers).json()
+        response = client.post(
+            "/api/original/chat",
+            headers=headers,
+            json={"user_input": "你好", "user_id": "oidc-user", "session_id": "oidc-session"},
+        )
+
+    assert health["open_catalog_enabled"] is True
+    assert response.json()["status"] == "conversation"
+    assert captured["token"] == "test-runtime-token"
 
 
 def test_original_week7_chat_endpoint(tmp_path):

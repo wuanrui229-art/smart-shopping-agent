@@ -28,6 +28,8 @@ class OpenCatalogChatClient:
     def __init__(self) -> None:
         gateway_token = os.getenv("AI_GATEWAY_API_KEY", "").strip() or os.getenv("VERCEL_OIDC_TOKEN", "").strip()
         openai_token = os.getenv("OPENAI_API_KEY", "").strip()
+        self.gateway_api_key = gateway_token
+        self.openai_api_key = openai_token
         self.api_key = gateway_token or openai_token
         self.uses_gateway = bool(gateway_token)
         self.base_url = (
@@ -47,9 +49,20 @@ class OpenCatalogChatClient:
         user_input: str,
         history: Optional[list[dict[str, str]]] = None,
         preferences: Optional[dict[str, Any]] = None,
+        runtime_oidc_token: Optional[str] = None,
     ) -> Optional[dict[str, Any]]:
-        if not self.enabled:
+        runtime_oidc_token = (runtime_oidc_token or "").strip()
+        api_key = runtime_oidc_token or self.api_key
+        if not api_key:
             return None
+
+        uses_gateway = bool(runtime_oidc_token or self.gateway_api_key)
+        base_url = "https://ai-gateway.vercel.sh/v1" if uses_gateway else self.base_url
+        model = (
+            os.getenv("AI_GATEWAY_MODEL", "openai/gpt-5.4-mini").strip()
+            if uses_gateway
+            else self.model
+        )
 
         safe_history = [
             {"role": item["role"], "content": str(item["content"])[:2000]}
@@ -78,17 +91,17 @@ class OpenCatalogChatClient:
             },
         ]
         payload = {
-            "model": self.model,
+            "model": model,
             "messages": messages,
             "stream": False,
             "max_tokens": 3200,
             "response_format": {"type": "json_schema", "json_schema": self._response_schema()},
         }
         try:
-            response = self._post(payload)
+            response = self._post(payload, api_key=api_key, base_url=base_url)
             content = response["choices"][0]["message"]["content"]
             data = json.loads(content)
-            return self._normalize(data, user_input, preferences or {})
+            return self._normalize(data, user_input, preferences or {}, model=model)
         except HTTPError as error:
             print(f"open_catalog_llm_error status={error.code}")
             return None
@@ -96,11 +109,12 @@ class OpenCatalogChatClient:
             print(f"open_catalog_llm_error type={type(error).__name__}")
             return None
 
-    def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
+    @staticmethod
+    def _post(payload: dict[str, Any], api_key: str, base_url: str) -> dict[str, Any]:
         request = Request(
-            f"{self.base_url}/chat/completions",
+            f"{base_url}/chat/completions",
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-            headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             method="POST",
         )
         with urlopen(request, timeout=38) as response:
@@ -158,14 +172,21 @@ class OpenCatalogChatClient:
             },
         }
 
-    def _normalize(self, data: dict[str, Any], user_input: str, preferences: dict[str, Any]) -> dict[str, Any]:
+    def _normalize(
+        self,
+        data: dict[str, Any],
+        user_input: str,
+        preferences: dict[str, Any],
+        model: Optional[str] = None,
+    ) -> dict[str, Any]:
+        active_model = model or self.model
         intent = data.get("intent")
         if intent != "recommendation":
             return {
                 "status": "conversation" if intent == "chat" else "needs_clarification",
                 "message": str(data.get("reply") or "Please tell me a little more about what you need."),
                 "mode": "llm-open-chat",
-                "model": self.model,
+                "model": active_model,
             }
 
         supported = data.get("supported_category")
@@ -174,7 +195,7 @@ class OpenCatalogChatClient:
             result.update(
                 {
                     "mode": "llm-routed-curated-catalog",
-                    "model": self.model,
+                    "model": active_model,
                     "message": str(data.get("reply") or result.get("message") or "Here are three recommendations."),
                 }
             )
@@ -186,7 +207,7 @@ class OpenCatalogChatClient:
                 "status": "needs_clarification",
                 "message": str(data.get("reply") or "Please share your budget and main use so I can recommend three options."),
                 "mode": "llm-open-chat",
-                "model": self.model,
+                "model": active_model,
             }
 
         recs = []
@@ -261,7 +282,7 @@ class OpenCatalogChatClient:
             "category": "open_catalog",
             "query": user_input,
             "mode": "llm-open-catalog",
-            "model": self.model,
+            "model": active_model,
             "message": str(data.get("reply") or f"Here are three options for {category}."),
             "source_note": "AI-generated shopping guidance. Prices, availability, ratings and specifications are not live data.",
             "algorithm": {
