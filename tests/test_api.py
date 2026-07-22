@@ -80,6 +80,24 @@ def test_inline_preferences_keep_serverless_ranking_deterministic(tmp_path):
         assert response.json()["result"]["algorithm"]["preferences_applied"] is True
 
 
+def test_original_chat_returns_contextual_non_catalog_answers(tmp_path):
+    with make_client(tmp_path) as client:
+        greeting = client.post(
+            "/api/original/chat",
+            json={"user_input": "hi", "user_id": "chat-user", "session_id": "chat-session-1"},
+        )
+        cosmetics = client.post(
+            "/api/original/chat",
+            json={"user_input": "我要买化妆品", "user_id": "chat-user", "session_id": "chat-session-2"},
+        )
+
+        assert greeting.status_code == 200
+        assert greeting.json()["status"] == "conversation"
+        assert cosmetics.status_code == 200
+        assert cosmetics.json()["status"] == "unsupported_category"
+        assert "化妆品" in cosmetics.json()["message"]
+
+
 def test_preferences_round_trip(tmp_path):
     with make_client(tmp_path) as client:
         payload = {"brands": ["SoundPeak"], "avoid_terms": ["漏音"], "price_sensitivity": 75, "decision_style": "conservative"}

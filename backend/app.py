@@ -12,6 +12,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from algorithm import ShoppingPipeline
+from algorithm.open_catalog import OpenCatalogChatClient
 from algorithm.original_demo import detect_category, recommend_original
 from backend import database
 from backend.schemas import CartRequest, ChatRequest, PreferenceRequest
@@ -20,6 +21,7 @@ from backend.schemas import CartRequest, ChatRequest, PreferenceRequest
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "frontend"
 pipeline = ShoppingPipeline()
+open_catalog = OpenCatalogChatClient()
 DEMO_CATEGORY_NAMES = {
     "backpack": "Kids Backpack",
     "headphones": "Headphones",
@@ -52,7 +54,13 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "service": "shopping-agent", "llm_enabled": pipeline.llm.enabled, "model": pipeline.llm.model if pipeline.llm.enabled else None}
+    return {
+        "status": "ok",
+        "service": "shopping-agent",
+        "llm_enabled": open_catalog.enabled or pipeline.llm.enabled,
+        "model": open_catalog.model if open_catalog.enabled else (pipeline.llm.model if pipeline.llm.enabled else None),
+        "open_catalog_enabled": open_catalog.enabled,
+    }
 
 
 def _finish_original_chat(
@@ -62,11 +70,11 @@ def _finish_original_chat(
     started_at: float,
     transport: str,
 ) -> dict:
-    if result["status"] == "needs_clarification":
+    if result["status"] != "success":
         message = result["message"]
     else:
         top = result["recs"][0]
-        message = (
+        message = result.get("message") or (
             f"Found {len(result['recs'])} great options for {result['cat']}! "
             f"Top Pick: {top['title']} — ${top['price']:.2f}, score {top['score']:.1f}."
         )
@@ -91,6 +99,12 @@ def _request_preferences(request: ChatRequest) -> dict:
     return database.get_preferences(request.user_id)
 
 
+def _recommend_for_request(request: ChatRequest, preferences: dict) -> dict:
+    history = [item.model_dump() for item in request.history]
+    llm_result = open_catalog.respond(request.user_input, history=history, preferences=preferences)
+    return llm_result or recommend_original(request.user_input, preferences=preferences)
+
+
 @app.post("/api/original/chat")
 def original_chat(request: ChatRequest) -> dict:
     started_at = perf_counter()
@@ -98,7 +112,7 @@ def original_chat(request: ChatRequest) -> dict:
     database.ensure_session(request.user_id, request.session_id, request.user_input)
     database.save_message(request.session_id, "user", request.user_input)
     preferences = _request_preferences(request)
-    result = recommend_original(request.user_input, preferences=preferences)
+    result = _recommend_for_request(request, preferences)
     return _finish_original_chat(request, result, request_id, started_at, "http-json")
 
 
@@ -133,14 +147,22 @@ async def original_chat_stream(request: ChatRequest) -> StreamingResponse:
                 message=f"Detected category · {category_name}",
             )
 
-            result = recommend_original(request.user_input, preferences=preferences)
+            result = _recommend_for_request(request, preferences)
             if result["status"] == "success":
-                yield _ndjson_event(
-                    "stage",
-                    request_id,
-                    stage="reviews",
-                    message="Loaded review statistics from the demo dataset",
-                )
+                if result.get("mode") == "llm-open-catalog":
+                    yield _ndjson_event(
+                        "stage",
+                        request_id,
+                        stage="candidates",
+                        message="Prepared open-category candidates with estimate labels",
+                    )
+                else:
+                    yield _ndjson_event(
+                        "stage",
+                        request_id,
+                        stage="reviews",
+                        message="Loaded review statistics from the demo dataset",
+                    )
                 yield _ndjson_event(
                     "stage",
                     request_id,

@@ -1,4 +1,5 @@
 from algorithm.demand_parser import parse_demand_rules
+from algorithm.open_catalog import OpenCatalogChatClient
 from algorithm.original_demo import detect_category, recommend_original
 from algorithm.pipeline import ShoppingPipeline
 from algorithm.review_analyzer import analyze_reviews
@@ -58,6 +59,64 @@ def test_original_week7_catalog_supports_all_six_categories():
 def test_original_category_detection_is_phrase_aware():
     assert detect_category("I need a smart watch for fitness") == "smartwatch"
     assert detect_category("Recommend running shoes") == "running_shoes"
+
+
+def test_original_demo_handles_conversation_and_catalog_boundaries():
+    greeting = recommend_original("hi")
+    assert greeting["status"] == "conversation"
+    assert "Smart Shopping AI" in greeting["message"]
+
+    unsupported = recommend_original("我要买化妆品")
+    assert unsupported["status"] == "unsupported_category"
+    assert "暂不" in unsupported["message"] or "还没有" in unsupported["message"]
+
+    broad_bag = recommend_original("i want to buy a bag")
+    assert broad_bag["status"] == "needs_clarification"
+    assert "Kids Backpack" in broad_bag["message"]
+
+    frustrated = recommend_original("you are so stupid")
+    assert frustrated["status"] == "conversation"
+    assert "Sorry" in frustrated["message"]
+
+
+def test_open_catalog_normalizes_any_category_into_three_estimated_options():
+    client = OpenCatalogChatClient()
+    raw = {
+        "intent": "recommendation",
+        "language": "zh",
+        "reply": "根据你的预算和通勤需求，我整理了三款咖啡机。",
+        "category_label": "Coffee Machine",
+        "supported_category": None,
+        "demand_summary": "预算 200 美元，适合办公室使用",
+        "budget_label": "$100–$200",
+        "key_concerns": ["清洁方便", "出杯速度"],
+        "market_notes": ["胶囊机操作更简单"],
+        "recommendations": [
+            {
+                "title": f"Demo Coffee Machine {index}",
+                "brand": "Demo",
+                "estimated_price_usd": 99 + index * 20,
+                "fit_score": 90 - index,
+                "value_score": 88 - index,
+                "durability_score": 84 - index,
+                "feature_score": 86 - index,
+                "user_satisfaction": 87 - index,
+                "rationale": "适合办公室快速制作咖啡",
+                "pros": ["操作简单"],
+                "cons": ["价格需要核验"],
+                "keywords": ["快捷", "易清洁"],
+            }
+            for index in range(3)
+        ],
+    }
+
+    result = client._normalize(raw, "推荐办公室咖啡机", {})
+
+    assert result["status"] == "success"
+    assert result["mode"] == "llm-open-catalog"
+    assert len(result["recs"]) == 3
+    assert all(item["estimated"] is True for item in result["recs"])
+    assert "not live data" in result["source_note"]
 
 
 def test_price_sensitivity_reorders_running_shoe_alternatives():

@@ -310,6 +310,13 @@ localStorage.setItem('ssai_user_id', state.userId);
 function generateId() { return Math.random().toString(36).substring(2, 10); }
 function persistState() { localStorage.setItem('ssai_state', JSON.stringify(state)); }
 function escapeHtml(value = '') { return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
+function plainTextFromHtml(value = '') { const node = document.createElement('div'); node.innerHTML = String(value); return node.textContent || ''; }
+function sanitizeResult(value) {
+    if (typeof value === 'string') return escapeHtml(value);
+    if (Array.isArray(value)) return value.map(sanitizeResult);
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitizeResult(item)]));
+    return value;
+}
 async function api(path, options = {}) {
     const response = await fetch(path, { headers: {'Content-Type': 'application/json'}, ...options });
     const body = await response.json().catch(() => ({}));
@@ -330,6 +337,7 @@ function addBackendStage(event) {
         received: '正在理解您的需求…',
         preferences: '正在应用购物偏好…',
         category: '正在匹配商品类别…',
+        candidates: '正在生成候选商品…',
         reviews: '正在分析商品与评论…',
         ranking: '正在生成推荐结果…',
         fallback: '正在生成推荐结果…',
@@ -347,10 +355,15 @@ function failBackendTrace() {
 
 async function streamOriginalChat(text) {
     const currentPreferences = state.preferences || {};
+    const history = state.messages.slice(0, -1).slice(-8).map(message => ({
+        role: message.role,
+        content: String(message.raw || plainTextFromHtml(message.content || '')).slice(0, 2000),
+    })).filter(message => message.content);
     const body = JSON.stringify({
         user_input: text,
         user_id: state.userId,
         session_id: state.currentSessionId,
+        history,
         preferences: {
             brands: currentPreferences.brands || [],
             avoid_terms: String(currentPreferences.avoid || '').split(/[,，、]/).map(value => value.trim()).filter(Boolean),
@@ -726,16 +739,20 @@ async function processMessage(text) {
     try {
         const payload = await streamOriginalChat(text);
         if (payload.status !== 'success') {
-            state.messages.push({role:'assistant', content: escapeHtml(payload.message || 'Please choose a product category.')});
+            const responseMessage = payload.message || '请再补充一些商品需求。';
+            state.messages.push({role:'assistant', content: escapeHtml(responseMessage), raw: responseMessage});
             renderChatMessages();
             persistState();
             return;
         }
-        const result = payload.result;
+        const result = sanitizeResult(payload.result);
         state.lastDecision = result;
         const top = result.recs[0];
-        const reply = `Found <strong>${result.recs.length}</strong> great options for <strong>${result.cat}</strong>!<br><br><strong>Top Pick:</strong> ${top.title}<br><strong>$${top.price}</strong> | <strong>${top.rating}</strong>/5 | Score: <strong>${top.score}</strong><br><br>Detailed analysis below:`;
-        state.messages.push({role:'assistant',content:reply});
+        const llmReply = result.mode && result.mode.startsWith('llm-');
+        const reply = llmReply
+            ? `${escapeHtml(payload.message)}<br><br><strong>Top Pick:</strong> ${top.title}<br><strong>${top.estimated ? 'Estimated ' : ''}$${top.price}</strong> | Fit Score: <strong>${top.score}</strong><br><br>Detailed analysis below:`
+            : `Found <strong>${result.recs.length}</strong> great options for <strong>${result.cat}</strong>!<br><br><strong>Top Pick:</strong> ${top.title}<br><strong>$${top.price}</strong> | <strong>${top.rating}</strong>/5 | Score: <strong>${top.score}</strong><br><br>Detailed analysis below:`;
+        state.messages.push({role:'assistant',content:reply,raw:payload.message});
         saveSession();
         renderChatMessages();
         renderDecisionPanel(result);
@@ -796,6 +813,11 @@ function newChat() {
 function renderDecisionPanel(result) {
     const panel = document.getElementById('decisionPanel');
     let html = '';
+    const openCatalogResult = result.mode === 'llm-open-catalog';
+
+    if (result.source_note) {
+        html += `<div class="info-box" style="margin-bottom:16px;border-left-color:#F59E0B;background:#FFFBEB;"><strong>AI-generated guidance:</strong> ${result.source_note}</div>`;
+    }
 
     // Zone 1: Demand & User Profile
     const profile = result.user_profile || {};
@@ -813,8 +835,8 @@ function renderDecisionPanel(result) {
         html += `<div class="zone"><h3>2. Market Overview</h3>`;
         html += `<div class="metrics-row">`;
         html += `<div class="metric-card"><div class="metric-value">${market.price_range}</div><div class="metric-label">Price Range</div></div>`;
-        html += `<div class="metric-card"><div class="metric-value">${market.avg_rating}</div><div class="metric-label">Average Rating</div></div>`;
-        html += `<div class="metric-card"><div class="metric-value">${market.total_reviews_analyzed.toLocaleString()}</div><div class="metric-label">Reviews Analyzed</div></div></div>`;
+        html += `<div class="metric-card"><div class="metric-value">${market.avg_rating}</div><div class="metric-label">${openCatalogResult ? 'Rating Data' : 'Average Rating'}</div></div>`;
+        html += `<div class="metric-card"><div class="metric-value">${market.total_reviews_analyzed?.toLocaleString?.() ?? '0'}</div><div class="metric-label">${openCatalogResult ? 'Live Reviews Used' : 'Reviews Analyzed'}</div></div></div>`;
         if (market.key_trends) { html += `<h4>Key Market Trends</h4><ul style="font-size:13px;color:#6B7280;">`; market.key_trends.forEach(t => html += `<li>${t}</li>`); html += `</ul>`; }
         html += `</div>`;
     }
@@ -829,13 +851,13 @@ function renderDecisionPanel(result) {
     const comp = result.comp;
     if (comp) {
         html += `<div class="zone"><h3>4. Multi-dimensional Comparison</h3>`;
-        html += `<table class="comp-table"><thead><tr><th>Product</th><th>Price ($)</th><th>Match %</th><th>Reputation</th><th>Value</th><th>Overall</th></tr></thead><tbody>`;
+        html += `<table class="comp-table"><thead><tr><th>Product</th><th>${openCatalogResult ? 'Est. Price ($)' : 'Price ($)'}</th><th>Match %</th><th>${openCatalogResult ? 'AI Confidence' : 'Reputation'}</th><th>Value</th><th>Overall</th></tr></thead><tbody>`;
         for (let i = 0; i < comp.products.length; i++) {
             const bg = i % 2 === 0 ? '#FFFFFF' : '#F8F9FA';
             html += `<tr style="background:${bg}"><td><strong>${comp.products[i]}</strong></td><td>$${comp.price[i].toFixed(2)}</td><td>${comp.match[i]}%</td><td>${comp.reputation[i]}%</td><td>${comp.value[i]}%</td><td><strong>${comp.overall[i].toFixed(1)}</strong></td></tr>`;
         }
         html += `</tbody></table>`;
-        html += `<p style="font-size:12px;color:#6B7280;margin-top:8px;">Scoring: Match 30% + Reputation 25% + Value 20% + Price 25%</p></div>`;
+        html += `<p style="font-size:12px;color:#6B7280;margin-top:8px;">${openCatalogResult ? 'AI-estimated fit scores; verify product facts and current prices before purchase.' : 'Scoring: Match 30% + Reputation 25% + Value 20% + Price 25%'}</p></div>`;
     }
 
     // Zone 5: Personalized Analysis
@@ -877,8 +899,8 @@ function renderDecisionPanel(result) {
     } else {
         html += `<span class="rec-tag">Balanced mode:</span> Optimal equilibrium between price, quality, and features.`;
     }
-    html += `<br><br><strong>${topRec.title}</strong> — $${topRec.price} | Score: ${topRec.score}/100<br>`;
-    html += `<a href="${topRec.url}" class="btn-amazon" target="_blank">View on Amazon</a></div>`;
+    html += `<br><br><strong>${topRec.title}</strong> — ${topRec.estimated ? 'estimated ' : ''}$${topRec.price} | Score: ${topRec.score}/100<br>`;
+    html += `<a href="${topRec.url}" class="btn-amazon" target="_blank">${topRec.estimated ? 'Search current listings' : 'View on Amazon'}</a></div>`;
 
     panel.innerHTML = html;
 }
@@ -893,8 +915,8 @@ function renderProductDeepCard(rec, icon, rank) {
     html += `<div class="product-header">`;
     html += `<div class="product-img" style="background:${rec.color}15;">${icon}</div>`;
     html += `<div style="flex:1;min-width:0;"><div class="product-title">${rec.title}</div>`;
-    html += `<div class="product-price">$${rec.price}</div>`;
-    html += `<div class="product-meta">${rec.rating}/5 · ${rec.reviews.toLocaleString()} reviews · Score: ${rec.score}</div></div></div>`;
+    html += `<div class="product-price">${rec.estimated ? 'Est. ' : ''}$${rec.price}</div>`;
+    html += `<div class="product-meta">${rec.estimated ? `AI fit score: ${rec.score} · verify live details` : `${rec.rating}/5 · ${rec.reviews.toLocaleString()} reviews · Score: ${rec.score}`}</div></div></div>`;
 
     // 4-Dimension Score
     if (a) {
@@ -946,7 +968,7 @@ function renderProductDeepCard(rec, icon, rank) {
         html += `</div>`;
     }
 
-    html += `<a href="${rec.url}" class="btn-amazon" target="_blank">View on Amazon</a>`;
+    html += `<a href="${rec.url}" class="btn-amazon" target="_blank">${rec.estimated ? 'Search current listings' : 'View on Amazon'}</a>`;
     html += `</div>`;
     return html;
 }
