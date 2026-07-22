@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import json
 from contextlib import asynccontextmanager
 from pathlib import Path
+from time import perf_counter
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from algorithm import ShoppingPipeline
-from algorithm.original_demo import recommend_original
+from algorithm.original_demo import detect_category, recommend_original
 from backend import database
 from backend.schemas import CartRequest, ChatRequest, PreferenceRequest
 
@@ -16,6 +20,14 @@ from backend.schemas import CartRequest, ChatRequest, PreferenceRequest
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "frontend"
 pipeline = ShoppingPipeline()
+DEMO_CATEGORY_NAMES = {
+    "backpack": "Kids Backpack",
+    "headphones": "Headphones",
+    "running_shoes": "Running Shoes",
+    "tablet": "Tablet",
+    "keyboard": "Keyboard",
+    "smartwatch": "Smart Watch",
+}
 
 
 @asynccontextmanager
@@ -43,12 +55,13 @@ def health() -> dict:
     return {"status": "ok", "service": "shopping-agent", "llm_enabled": pipeline.llm.enabled, "model": pipeline.llm.model if pipeline.llm.enabled else None}
 
 
-@app.post("/api/original/chat")
-def original_chat(request: ChatRequest) -> dict:
-    database.ensure_session(request.user_id, request.session_id, request.user_input)
-    database.save_message(request.session_id, "user", request.user_input)
-    preferences = database.get_preferences(request.user_id)
-    result = recommend_original(request.user_input, preferences=preferences)
+def _finish_original_chat(
+    request: ChatRequest,
+    result: dict,
+    request_id: str,
+    started_at: float,
+    transport: str,
+) -> dict:
     if result["status"] == "needs_clarification":
         message = result["message"]
     else:
@@ -58,9 +71,105 @@ def original_chat(request: ChatRequest) -> dict:
             f"Top Pick: {top['title']} — ${top['price']:.2f}, score {top['score']:.1f}."
         )
         database.set_last_demand(request.session_id, {"category": result["category"], "query": request.user_input})
-    payload = {"status": result["status"], "message": message, "result": result}
+    payload = {
+        "status": result["status"],
+        "message": message,
+        "result": result,
+        "meta": {
+            "request_id": request_id,
+            "elapsed_ms": round((perf_counter() - started_at) * 1000, 1),
+            "transport": transport,
+        },
+    }
     database.save_message(request.session_id, "assistant", message, payload)
     return payload
+
+
+@app.post("/api/original/chat")
+def original_chat(request: ChatRequest) -> dict:
+    started_at = perf_counter()
+    request_id = uuid4().hex[:10]
+    database.ensure_session(request.user_id, request.session_id, request.user_input)
+    database.save_message(request.session_id, "user", request.user_input)
+    preferences = database.get_preferences(request.user_id)
+    result = recommend_original(request.user_input, preferences=preferences)
+    return _finish_original_chat(request, result, request_id, started_at, "http-json")
+
+
+def _ndjson_event(event_type: str, request_id: str, **data: object) -> bytes:
+    return (json.dumps({"type": event_type, "request_id": request_id, **data}, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+@app.post("/api/original/chat/stream")
+async def original_chat_stream(request: ChatRequest) -> StreamingResponse:
+    async def generate():
+        started_at = perf_counter()
+        request_id = uuid4().hex[:10]
+        try:
+            yield _ndjson_event("stage", request_id, stage="received", message="FastAPI received the shopping request")
+            database.ensure_session(request.user_id, request.session_id, request.user_input)
+            database.save_message(request.session_id, "user", request.user_input)
+
+            preferences = database.get_preferences(request.user_id)
+            yield _ndjson_event(
+                "stage",
+                request_id,
+                stage="preferences",
+                message=f"Loaded preferences · {preferences['decision_style']} decision style",
+            )
+
+            category = detect_category(request.user_input)
+            category_name = DEMO_CATEGORY_NAMES.get(category, "needs clarification")
+            yield _ndjson_event(
+                "stage",
+                request_id,
+                stage="category",
+                message=f"Detected category · {category_name}",
+            )
+
+            result = recommend_original(request.user_input, preferences=preferences)
+            if result["status"] == "success":
+                yield _ndjson_event(
+                    "stage",
+                    request_id,
+                    stage="reviews",
+                    message="Loaded review statistics from the demo dataset",
+                )
+                yield _ndjson_event(
+                    "stage",
+                    request_id,
+                    stage="ranking",
+                    message=f"Scored 4 dimensions and ranked {len(result['recs'])} products",
+                )
+
+            payload = _finish_original_chat(request, result, request_id, started_at, "ndjson-stream")
+            yield _ndjson_event(
+                "result",
+                request_id,
+                stage="complete",
+                message="Backend pipeline complete",
+                payload=payload,
+            )
+        except Exception:
+            yield _ndjson_event(
+                "error",
+                request_id,
+                stage="failed",
+                message="The backend pipeline failed",
+                code="INTERNAL_ERROR",
+                detail="Please retry the request or use the standard JSON endpoint.",
+                retryable=True,
+            )
+
+    return StreamingResponse(
+        generate(),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @app.post("/api/chat")

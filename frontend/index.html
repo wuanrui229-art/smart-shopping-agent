@@ -46,6 +46,7 @@
         .chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
         .chip { padding: 8px 16px; background: #F8F9FA; border: 1px solid #E5E7EB; border-radius: 20px; font-size: 13px; color: #374151; cursor: pointer; transition: all 0.2s; }
         .chip:hover { border-color: #FF9900; color: #FF9900; }
+        .chip.disabled { opacity: .5; pointer-events: none; }
 
         /* ── Chat View (centered like Alexa) ── */
         .chat-view { flex: 1; display: none; flex-direction: column; max-width: 700px; margin: 0 auto; width: 100%; padding: 20px 0 100px; }
@@ -174,11 +175,19 @@
         .btn-amazon { display: inline-block; padding: 8px 20px; background: #FF9900; color: white; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: 500; margin-top: 8px; }
         .btn-amazon:hover { background: #F97316; }
 
-        .loading { display: flex; align-items: center; gap: 4px; color: #6B7280; font-size: 14px; padding: 12px 0; align-self: flex-start; }
-        .loading span { animation: blink 1.4s infinite both; }
-        .loading span:nth-child(2) { animation-delay: 0.2s; }
-        .loading span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+        .loading { width: 100%; margin: 4px 0 16px; padding: 14px 16px; color: #374151; font-size: 13px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; }
+        .loading-head { display: flex; align-items: center; gap: 8px; }
+        .loading-pulse { width: 9px; height: 9px; border-radius: 50%; background: #FF9900; box-shadow: 0 0 0 0 rgba(255,153,0,.45); animation: pulse 1.4s infinite; }
+        .loading.complete .loading-pulse { background: #059669; animation: none; }
+        .loading.failed { background: #FEF2F2; border-color: #FECACA; }
+        .loading.failed .loading-pulse { background: #DC2626; animation: none; }
+        .live-badge { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: #FF9900; color: white; font-size: 10px; font-weight: 700; letter-spacing: .4px; }
+        .loading.complete .live-badge { background: #059669; }
+        .pipeline-steps { display: grid; gap: 6px; margin-top: 10px; }
+        .pipeline-step { display: flex; align-items: center; gap: 8px; color: #6B7280; }
+        .pipeline-check { width: 16px; height: 16px; border-radius: 50%; background: #FFEDD5; color: #EA580C; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; font-weight: 700; }
+        .pipeline-step:last-child { color: #374151; font-weight: 500; }
+        @keyframes pulse { 70% { box-shadow: 0 0 0 7px rgba(255,153,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,153,0,0); } }
 
         .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 1000; animation: fadeIn 0.3s ease; }
         .toast.success { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
@@ -255,7 +264,14 @@
                 <!-- Chat View -->
                 <div class="chat-view" id="chatView">
                     <div id="chatMessages"></div>
-                    <div class="loading hidden" id="loading">Analyzing reviews<span>.</span><span>.</span><span>.</span></div>
+                    <div class="loading hidden" id="loading" role="status" aria-live="polite">
+                        <div class="loading-head">
+                            <span class="loading-pulse"></span>
+                            <strong id="loadingTitle">Connecting to FastAPI backend</strong>
+                            <span class="live-badge" id="liveBadge">LIVE</span>
+                        </div>
+                        <div class="pipeline-steps" id="pipelineSteps"></div>
+                    </div>
                     <div class="decision-panel" id="decisionPanel"></div>
                 </div>
             </div>
@@ -312,8 +328,122 @@ async function api(path, options = {}) {
     return body;
 }
 
+const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+function resetBackendTrace() {
+    const trace = document.getElementById('loading');
+    trace.classList.remove('hidden', 'complete', 'failed');
+    document.getElementById('loadingTitle').textContent = 'Connecting to FastAPI backend';
+    document.getElementById('liveBadge').textContent = 'LIVE';
+    document.getElementById('pipelineSteps').innerHTML = '';
+}
+
+function addBackendStage(event) {
+    const steps = document.getElementById('pipelineSteps');
+    let row = document.getElementById(`pipeline-${event.stage}`);
+    if (!row) {
+        row = document.createElement('div');
+        row.className = 'pipeline-step';
+        row.id = `pipeline-${event.stage}`;
+        const check = document.createElement('span');
+        check.className = 'pipeline-check';
+        check.textContent = '✓';
+        const label = document.createElement('span');
+        label.className = 'pipeline-label';
+        row.append(check, label);
+        steps.appendChild(row);
+    }
+    row.querySelector('.pipeline-label').textContent = event.message || event.stage;
+    if (event.request_id) document.getElementById('liveBadge').textContent = `#${event.request_id}`;
+}
+
+function finishBackendTrace(payload) {
+    const trace = document.getElementById('loading');
+    trace.classList.add('complete');
+    const elapsed = payload.meta?.elapsed_ms;
+    document.getElementById('loadingTitle').textContent = elapsed === undefined
+        ? 'Backend pipeline complete'
+        : `Backend pipeline complete · ${elapsed} ms`;
+}
+
+function failBackendTrace(message) {
+    const trace = document.getElementById('loading');
+    trace.classList.add('failed');
+    document.getElementById('loadingTitle').textContent = `Backend error · ${message}`;
+    document.getElementById('liveBadge').textContent = 'ERROR';
+}
+
+async function streamOriginalChat(text) {
+    const body = JSON.stringify({
+        user_input: text,
+        user_id: state.userId,
+        session_id: state.currentSessionId,
+    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000);
+    let response;
+    try {
+        response = await fetch('/api/original/chat/stream', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body,
+            signal: controller.signal,
+        });
+    } finally {
+        clearTimeout(timeout);
+    }
+    if (response.status === 404 || response.status === 405) {
+        addBackendStage({stage: 'fallback', message: 'Streaming unavailable · using standard JSON API'});
+        const payload = await api('/api/original/chat', {method: 'POST', body});
+        finishBackendTrace(payload);
+        return payload;
+    }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.body || !response.headers.get('content-type')?.includes('application/x-ndjson')) {
+        throw new Error('Streaming response is unavailable');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let finalPayload = null;
+
+    while (true) {
+        const {value, done} = await reader.read();
+        buffer += decoder.decode(value || new Uint8Array(), {stream: !done});
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+            if (!line.trim()) continue;
+            const event = JSON.parse(line);
+            if (event.type === 'error') throw new Error(event.detail || event.message || 'Streaming failed');
+            if (event.type === 'stage') {
+                addBackendStage(event);
+                await wait(160);
+            }
+            if (event.type === 'result') finalPayload = event.payload;
+        }
+        if (done) break;
+    }
+
+    if (!finalPayload) throw new Error('Backend stream ended without a result');
+    finishBackendTrace(finalPayload);
+    return finalPayload;
+}
+
 // ── PANEL SYSTEM ──
 let currentPanel = null;
+let requestBusy = false;
+
+function setRequestBusy(busy) {
+    requestBusy = busy;
+    ['homeInput', 'chatInput'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.disabled = busy;
+    });
+    document.querySelectorAll('.input-bar-btn, .bottom-send').forEach(button => { button.disabled = busy; });
+    document.querySelectorAll('.chip').forEach(chip => chip.classList.toggle('disabled', busy));
+}
 
 function openPanel(type) {
     currentPanel = type;
@@ -598,22 +728,16 @@ function sendFromChat() { const input = document.getElementById('chatInput'); co
 function quickAsk(text) { processMessage(text); }
 
 async function processMessage(text) {
+    if (requestBusy || !text.trim()) return;
+    setRequestBusy(true);
     showChat();
     state.hasInteracted = true;
     state.messages.push({role:'user',content:text});
     renderChatMessages();
-    document.getElementById('loading').classList.remove('hidden');
+    resetBackendTrace();
     document.getElementById('decisionPanel').innerHTML = '';
     try {
-        const payload = await api('/api/original/chat', {
-            method: 'POST',
-            body: JSON.stringify({
-                user_input: text,
-                user_id: state.userId,
-                session_id: state.currentSessionId,
-            }),
-        });
-        document.getElementById('loading').classList.add('hidden');
+        const payload = await streamOriginalChat(text);
         if (payload.status !== 'success') {
             state.messages.push({role:'assistant', content: escapeHtml(payload.message || 'Please choose a product category.')});
             renderChatMessages();
@@ -630,10 +754,13 @@ async function processMessage(text) {
         renderDecisionPanel(result);
         persistState();
     } catch (error) {
-        document.getElementById('loading').classList.add('hidden');
-        state.messages.push({role:'assistant', content: `Service error: ${escapeHtml(error.message)}`});
+        const message = error.name === 'AbortError' ? 'Request timed out. Please retry.' : error.message;
+        failBackendTrace(message);
+        state.messages.push({role:'assistant', content: `Service error: ${escapeHtml(message)}`});
         renderChatMessages();
         persistState();
+    } finally {
+        setRequestBusy(false);
     }
 }
 

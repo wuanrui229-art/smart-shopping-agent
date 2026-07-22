@@ -58,3 +58,15 @@ def test_original_week7_catalog_supports_all_six_categories():
 def test_original_category_detection_is_phrase_aware():
     assert detect_category("I need a smart watch for fitness") == "smartwatch"
     assert detect_category("Recommend running shoes") == "running_shoes"
+
+
+def test_price_sensitivity_reorders_running_shoe_alternatives():
+    query = "我想买一双适合日常训练的跑鞋"
+    default = recommend_original(query, {"price_sensitivity": 50, "decision_style": "balanced"})
+    price_focused = recommend_original(query, {"price_sensitivity": 100, "decision_style": "balanced"})
+
+    assert "HOKA" in default["recs"][1]["title"]
+    assert "ASICS" in default["recs"][2]["title"]
+    assert "ASICS" in price_focused["recs"][1]["title"]
+    assert "HOKA" in price_focused["recs"][2]["title"]
+    assert price_focused["algorithm"]["preferences_applied"] is True

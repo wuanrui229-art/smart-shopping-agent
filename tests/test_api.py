@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from backend import database
@@ -32,6 +34,27 @@ def test_original_week7_chat_endpoint(tmp_path):
         assert payload["status"] == "success"
         assert payload["result"]["cat"] == "Headphones"
         assert len(payload["result"]["recs"]) == 3
+        assert payload["meta"]["transport"] == "http-json"
+
+
+def test_original_week7_stream_reports_backend_stages(tmp_path):
+    with make_client(tmp_path) as client:
+        with client.stream(
+            "POST",
+            "/api/original/chat/stream",
+            json={"user_input": "Show me Keyboard", "user_id": "stream-user", "session_id": "stream-session"},
+        ) as response:
+            assert response.status_code == 200
+            assert response.headers["content-type"].startswith("application/x-ndjson")
+            events = [json.loads(line) for line in response.iter_lines() if line]
+
+        stages = [event.get("stage") for event in events]
+        assert stages == ["received", "preferences", "category", "reviews", "ranking", "complete"]
+        assert events[-1]["type"] == "result"
+        payload = events[-1]["payload"]
+        assert payload["status"] == "success"
+        assert payload["result"]["cat"] == "Keyboard"
+        assert payload["meta"]["transport"] == "ndjson-stream"
 
 
 def test_preferences_round_trip(tmp_path):
