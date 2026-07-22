@@ -52,16 +52,22 @@ class OpenCatalogChatClient:
         runtime_oidc_token: Optional[str] = None,
     ) -> Optional[dict[str, Any]]:
         runtime_oidc_token = (runtime_oidc_token or "").strip()
-        api_key = runtime_oidc_token or self.api_key
+        # An explicitly configured OpenAI key must override Vercel's automatic
+        # OIDC token; otherwise a Gateway billing restriction would still win.
+        api_key = self.openai_api_key or runtime_oidc_token or self.gateway_api_key
         if not api_key:
             return None
 
-        uses_gateway = bool(runtime_oidc_token or self.gateway_api_key)
-        base_url = "https://ai-gateway.vercel.sh/v1" if uses_gateway else self.base_url
+        uses_gateway = not bool(self.openai_api_key)
+        base_url = (
+            "https://ai-gateway.vercel.sh/v1"
+            if uses_gateway
+            else os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+        )
         model = (
             os.getenv("AI_GATEWAY_MODEL", "openai/gpt-5.4-mini").strip()
             if uses_gateway
-            else self.model
+            else os.getenv("OPENAI_MODEL", "gpt-5.4-mini").strip()
         )
 
         safe_history = [

@@ -119,6 +119,36 @@ def test_open_catalog_normalizes_any_category_into_three_estimated_options():
     assert "not live data" in result["source_note"]
 
 
+def test_explicit_openai_key_overrides_vercel_runtime_oidc(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setenv("VERCEL_OIDC_TOKEN", "test-vercel-oidc")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5-mini")
+    client = OpenCatalogChatClient()
+    captured = {}
+
+    def fake_post(payload, api_key, base_url):
+        captured.update({"model": payload["model"], "api_key": api_key, "base_url": base_url})
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"intent":"chat","language":"zh","reply":"你好！","category_label":"","supported_category":null,"demand_summary":"","budget_label":"","key_concerns":[],"market_notes":[],"recommendations":[]}'
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(client, "_post", fake_post)
+    result = client.respond("你好", runtime_oidc_token="request-oidc-token")
+
+    assert result["status"] == "conversation"
+    assert captured == {
+        "model": "gpt-5-mini",
+        "api_key": "test-openai-key",
+        "base_url": "https://api.openai.com/v1",
+    }
+
+
 def test_price_sensitivity_reorders_running_shoe_alternatives():
     query = "我想买一双适合日常训练的跑鞋"
     default = recommend_original(query, {"price_sensitivity": 50, "decision_style": "balanced"})
