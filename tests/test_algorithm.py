@@ -186,7 +186,7 @@ def test_kimi_key_enables_open_catalog_and_overrides_vercel_oidc(monkeypatch):
     }
     assert captured["model"] == "kimi-k3"
     assert captured["api_key"] == "test-kimi-key"
-    assert captured["base_url"] == "https://api.moonshot.ai/v1"
+    assert captured["base_url"] == "https://api.moonshot.cn/v1"
     assert captured["response_format"]["type"] == "json_schema"
     assert captured["reasoning_effort"] == "low"
 

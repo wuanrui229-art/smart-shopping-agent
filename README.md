@@ -59,7 +59,7 @@ start.bat
 LLM_PROVIDER=kimi
 MOONSHOT_API_KEY=你的 Kimi Key
 MOONSHOT_MODEL=kimi-k3
-MOONSHOT_BASE_URL=https://api.moonshot.ai/v1
+MOONSHOT_BASE_URL=https://api.moonshot.cn/v1
 ```
 
 代码也兼容 `KIMI_API_KEY` 这个变量名，但推荐使用 Kimi 官方文档中的 `MOONSHOT_API_KEY`。如果密钥来自使用其他 API 地址的控制台，请把 `MOONSHOT_BASE_URL` 改为该控制台标明的地址。也可以选择设置 `OPENAI_API_KEY`，或通过 `AI_GATEWAY_API_KEY` / Vercel 部署身份令牌连接 AI Gateway。`LLM_PROVIDER` 可取 `kimi`、`openai` 或 `vercel`。

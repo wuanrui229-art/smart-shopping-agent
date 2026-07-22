@@ -52,7 +52,7 @@ class OpenCatalogChatClient:
                 "base_url": (
                     os.getenv("MOONSHOT_BASE_URL", "").strip()
                     or os.getenv("KIMI_BASE_URL", "").strip()
-                    or "https://api.moonshot.ai/v1"
+                    or "https://api.moonshot.cn/v1"
                 ).rstrip("/"),
                 "model": (
                     os.getenv("MOONSHOT_MODEL", "").strip()
