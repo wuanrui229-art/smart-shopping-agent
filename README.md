@@ -6,13 +6,17 @@
 
 ## 在线部署
 
-**公开 Demo：** [https://smart-shopping-agent-wuanrui229-art.onrender.com](https://smart-shopping-agent-wuanrui229-art.onrender.com)
+**Vercel 公开 Demo（推荐）：** [https://smart-shopping-agent-wuanrui.vercel.app](https://smart-shopping-agent-wuanrui.vercel.app)
+
+**Render 备用 Demo：** [https://smart-shopping-agent-wuanrui229-art.onrender.com](https://smart-shopping-agent-wuanrui229-art.onrender.com)
+
+Vercel 版本把原版前端、FastAPI 后端和 Python 推荐算法部署在同一个域名下，并支持实时流式响应。Vercel Functions 的本地磁盘不是永久数据库，因此课程演示中的会话历史和偏好以浏览器本地状态为主；每次推荐请求会携带当前偏好，确保 Serverless 实例切换后个性化排序仍然一致。课程版不保存敏感或支付数据。
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fwuanrui229-art%2Fsmart-shopping-agent)
 
 点击上方按钮可把完整的前端、FastAPI 后端和推荐算法部署为公开 Render Web Service。仓库已提供 `render.yaml`，部署时会自动安装依赖、启动服务并检查 `/api/health`。
 
-免费实例适合作业和论文演示：闲置一段时间后会休眠，首次访问可能需要等待约一分钟。演示数据使用临时 SQLite 文件，服务休眠、重启或重新部署后，历史会话和偏好可能被清空。未配置 `OPENAI_API_KEY` 时系统自动使用离线规则算法，主要演示流程仍可完整运行。
+Render 免费实例适合作业和论文备用演示：闲置一段时间后会休眠，首次访问可能需要等待约一分钟。未配置 `OPENAI_API_KEY` 时系统自动使用离线规则算法，主要演示流程仍可完整运行。
 
 ## 一、系统包含什么
 
@@ -89,6 +93,8 @@ smart-shopping-agent/
 ├── tests/                 # 自动化测试
 ├── docs/                  # 作业说明与原始材料
 ├── run.py                 # 服务入口
+├── app.py                 # Vercel FastAPI 入口
+├── vercel.json            # Vercel Function 配置
 ├── start.sh / start.bat   # 一键启动
 └── requirements.txt
 ```

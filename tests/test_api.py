@@ -57,6 +57,29 @@ def test_original_week7_stream_reports_backend_stages(tmp_path):
         assert payload["meta"]["transport"] == "ndjson-stream"
 
 
+def test_inline_preferences_keep_serverless_ranking_deterministic(tmp_path):
+    with make_client(tmp_path) as client:
+        response = client.post(
+            "/api/original/chat",
+            json={
+                "user_input": "我想买一双适合日常训练的跑鞋",
+                "user_id": "vercel-user",
+                "session_id": "vercel-session",
+                "preferences": {
+                    "brands": [],
+                    "avoid_terms": [],
+                    "price_sensitivity": 100,
+                    "decision_style": "balanced",
+                },
+            },
+        )
+        assert response.status_code == 200
+        recommendations = response.json()["result"]["recs"]
+        assert "ASICS" in recommendations[1]["title"]
+        assert "HOKA" in recommendations[2]["title"]
+        assert response.json()["result"]["algorithm"]["preferences_applied"] is True
+
+
 def test_preferences_round_trip(tmp_path):
     with make_client(tmp_path) as client:
         payload = {"brands": ["SoundPeak"], "avoid_terms": ["漏音"], "price_sensitivity": 75, "decision_style": "conservative"}

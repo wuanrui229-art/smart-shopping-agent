@@ -374,10 +374,17 @@ function failBackendTrace(message) {
 }
 
 async function streamOriginalChat(text) {
+    const currentPreferences = state.preferences || {};
     const body = JSON.stringify({
         user_input: text,
         user_id: state.userId,
         session_id: state.currentSessionId,
+        preferences: {
+            brands: currentPreferences.brands || [],
+            avoid_terms: String(currentPreferences.avoid || '').split(/[,，、]/).map(value => value.trim()).filter(Boolean),
+            price_sensitivity: currentPreferences.price_sensitivity ?? 50,
+            decision_style: String(currentPreferences.decision_style || 'Balanced').toLowerCase(),
+        },
     });
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 90000);
@@ -639,6 +646,7 @@ async function savePreferences() {
     const decisionStyle = selectedStyleEl ? selectedStyleEl.dataset.value : 'Balanced';
 
     state.preferences = { brands, avoid, price_sensitivity: priceSensitivity, decision_style: decisionStyle };
+    state.preferencesSavedLocally = true;
     persistState();
     try {
         await api(`/api/preferences/${state.userId}`, {
@@ -658,6 +666,13 @@ async function savePreferences() {
 }
 
 async function loadPreferencesFromBackend() {
+    const local = state.preferences || {};
+    const hasLocalOverride = state.preferencesSavedLocally
+        || (local.brands || []).length > 0
+        || Boolean(local.avoid)
+        || (local.price_sensitivity ?? 50) !== 50
+        || String(local.decision_style || 'Balanced').toLowerCase() !== 'balanced';
+    if (hasLocalOverride) return;
     try {
         const prefs = await api(`/api/preferences/${state.userId}`);
         state.preferences = {

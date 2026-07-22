@@ -9,7 +9,8 @@ from typing import Any, Optional
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = Path(os.getenv("SHOPPING_DB_PATH", ROOT / "data" / "shopping_agent.db"))
+DEFAULT_DB_PATH = Path("/tmp/shopping_agent.db") if os.getenv("VERCEL") else ROOT / "data" / "shopping_agent.db"
+DB_PATH = Path(os.getenv("SHOPPING_DB_PATH", DEFAULT_DB_PATH))
 
 
 def _now() -> str:

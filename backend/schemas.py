@@ -1,12 +1,8 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from pydantic import BaseModel, Field
-
-
-class ChatRequest(BaseModel):
-    user_input: str = Field(min_length=1, max_length=500)
-    user_id: str = Field(min_length=1, max_length=80)
-    session_id: str = Field(min_length=1, max_length=80)
 
 
 class PreferenceRequest(BaseModel):
@@ -14,6 +10,13 @@ class PreferenceRequest(BaseModel):
     avoid_terms: list[str] = Field(default_factory=list, max_length=10)
     price_sensitivity: int = Field(default=50, ge=0, le=100)
     decision_style: str = Field(default="balanced", pattern="^(conservative|balanced|aggressive)$")
+
+
+class ChatRequest(BaseModel):
+    user_input: str = Field(min_length=1, max_length=500)
+    user_id: str = Field(min_length=1, max_length=80)
+    session_id: str = Field(min_length=1, max_length=80)
+    preferences: Optional[PreferenceRequest] = None
 
 
 class CartRequest(BaseModel):

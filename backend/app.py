@@ -85,13 +85,19 @@ def _finish_original_chat(
     return payload
 
 
+def _request_preferences(request: ChatRequest) -> dict:
+    if request.preferences is not None:
+        return request.preferences.model_dump()
+    return database.get_preferences(request.user_id)
+
+
 @app.post("/api/original/chat")
 def original_chat(request: ChatRequest) -> dict:
     started_at = perf_counter()
     request_id = uuid4().hex[:10]
     database.ensure_session(request.user_id, request.session_id, request.user_input)
     database.save_message(request.session_id, "user", request.user_input)
-    preferences = database.get_preferences(request.user_id)
+    preferences = _request_preferences(request)
     result = recommend_original(request.user_input, preferences=preferences)
     return _finish_original_chat(request, result, request_id, started_at, "http-json")
 
@@ -110,7 +116,7 @@ async def original_chat_stream(request: ChatRequest) -> StreamingResponse:
             database.ensure_session(request.user_id, request.session_id, request.user_input)
             database.save_message(request.session_id, "user", request.user_input)
 
-            preferences = database.get_preferences(request.user_id)
+            preferences = _request_preferences(request)
             yield _ndjson_event(
                 "stage",
                 request_id,
@@ -177,7 +183,7 @@ def chat(request: ChatRequest) -> dict:
     database.ensure_session(request.user_id, request.session_id, request.user_input)
     database.save_message(request.session_id, "user", request.user_input)
     context = database.get_last_demand(request.session_id)
-    preferences = database.get_preferences(request.user_id)
+    preferences = _request_preferences(request)
     result = pipeline.run(request.user_input, context=context, preferences=preferences)
     database.set_last_demand(request.session_id, result.get("demand") or context)
     database.save_message(request.session_id, "assistant", result["message"], result)
