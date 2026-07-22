@@ -23,22 +23,78 @@ BADGES = ["Best Overall", "Best Value", "Alternative"]
 
 
 class OpenCatalogChatClient:
-    """Open-ended chat and product guidance through Vercel AI Gateway or OpenAI."""
+    """Open-ended shopping chat through Kimi, OpenAI, or Vercel AI Gateway."""
 
     def __init__(self) -> None:
-        gateway_token = os.getenv("AI_GATEWAY_API_KEY", "").strip() or os.getenv("VERCEL_OIDC_TOKEN", "").strip()
-        openai_token = os.getenv("OPENAI_API_KEY", "").strip()
-        self.gateway_api_key = gateway_token
-        self.openai_api_key = openai_token
-        self.api_key = gateway_token or openai_token
-        self.uses_gateway = bool(gateway_token)
-        self.base_url = (
-            "https://ai-gateway.vercel.sh/v1"
-            if self.uses_gateway
-            else os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+        self.kimi_api_key = (
+            os.getenv("MOONSHOT_API_KEY", "").strip()
+            or os.getenv("KIMI_API_KEY", "").strip()
         )
-        default_model = "openai/gpt-5.4-mini" if self.uses_gateway else "gpt-5.4-mini"
-        self.model = os.getenv("AI_GATEWAY_MODEL" if self.uses_gateway else "OPENAI_MODEL", default_model).strip()
+        self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        self.gateway_api_key = (
+            os.getenv("AI_GATEWAY_API_KEY", "").strip()
+            or os.getenv("VERCEL_OIDC_TOKEN", "").strip()
+        )
+        self.requested_provider = os.getenv("LLM_PROVIDER", "").strip().casefold()
+
+        configured = self._resolve_provider()
+        self.api_key = configured["api_key"]
+        self.provider = configured["provider"]
+        self.base_url = configured["base_url"]
+        self.model = configured["model"]
+        self.uses_gateway = self.provider == "vercel-ai-gateway"
+
+    def _resolve_provider(self, runtime_oidc_token: str = "") -> dict[str, str]:
+        providers = {
+            "kimi-direct": {
+                "provider": "kimi-direct",
+                "api_key": self.kimi_api_key,
+                "base_url": (
+                    os.getenv("MOONSHOT_BASE_URL", "").strip()
+                    or os.getenv("KIMI_BASE_URL", "").strip()
+                    or "https://api.moonshot.ai/v1"
+                ).rstrip("/"),
+                "model": (
+                    os.getenv("MOONSHOT_MODEL", "").strip()
+                    or os.getenv("KIMI_MODEL", "").strip()
+                    or "kimi-k3"
+                ),
+            },
+            "openai-direct": {
+                "provider": "openai-direct",
+                "api_key": self.openai_api_key,
+                "base_url": os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/"),
+                "model": os.getenv("OPENAI_MODEL", "gpt-5.4-mini").strip(),
+            },
+            "vercel-ai-gateway": {
+                "provider": "vercel-ai-gateway",
+                "api_key": runtime_oidc_token.strip() or self.gateway_api_key,
+                "base_url": "https://ai-gateway.vercel.sh/v1",
+                "model": os.getenv("AI_GATEWAY_MODEL", "openai/gpt-5.4-mini").strip(),
+            },
+        }
+        aliases = {
+            "kimi": "kimi-direct",
+            "moonshot": "kimi-direct",
+            "openai": "openai-direct",
+            "gateway": "vercel-ai-gateway",
+            "vercel": "vercel-ai-gateway",
+        }
+        selected = aliases.get(self.requested_provider, self.requested_provider)
+        if selected in providers:
+            return providers[selected]
+        for provider in ("kimi-direct", "openai-direct", "vercel-ai-gateway"):
+            if providers[provider]["api_key"]:
+                return providers[provider]
+        return {"provider": "", "api_key": "", "base_url": "", "model": ""}
+
+    def describe(self, runtime_oidc_token: str = "") -> dict[str, Any]:
+        config = self._resolve_provider(runtime_oidc_token)
+        return {
+            "enabled": bool(config["api_key"]),
+            "provider": config["provider"] or None,
+            "model": config["model"] or None,
+        }
 
     @property
     def enabled(self) -> bool:
@@ -51,24 +107,12 @@ class OpenCatalogChatClient:
         preferences: Optional[dict[str, Any]] = None,
         runtime_oidc_token: Optional[str] = None,
     ) -> Optional[dict[str, Any]]:
-        runtime_oidc_token = (runtime_oidc_token or "").strip()
-        # An explicitly configured OpenAI key must override Vercel's automatic
-        # OIDC token; otherwise a Gateway billing restriction would still win.
-        api_key = self.openai_api_key or runtime_oidc_token or self.gateway_api_key
+        config = self._resolve_provider(runtime_oidc_token or "")
+        api_key = config["api_key"]
         if not api_key:
             return None
-
-        uses_gateway = not bool(self.openai_api_key)
-        base_url = (
-            "https://ai-gateway.vercel.sh/v1"
-            if uses_gateway
-            else os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
-        )
-        model = (
-            os.getenv("AI_GATEWAY_MODEL", "openai/gpt-5.4-mini").strip()
-            if uses_gateway
-            else os.getenv("OPENAI_MODEL", "gpt-5.4-mini").strip()
-        )
+        base_url = config["base_url"]
+        model = config["model"]
 
         safe_history = [
             {"role": item["role"], "content": str(item["content"])[:2000]}
@@ -103,6 +147,9 @@ class OpenCatalogChatClient:
             "max_tokens": 3200,
             "response_format": {"type": "json_schema", "json_schema": self._response_schema()},
         }
+        if config["provider"] == "kimi-direct" and model.startswith("kimi-k3"):
+            # K3 defaults to maximum thinking effort; low is more responsive for a live classroom demo.
+            payload["reasoning_effort"] = "low"
         try:
             response = self._post(payload, api_key=api_key, base_url=base_url)
             content = response["choices"][0]["message"]["content"]

@@ -16,7 +16,7 @@ Vercel 版本把原版前端、FastAPI 后端、大语言模型和 Python 推荐
 
 点击上方按钮可把完整的前端、FastAPI 后端和推荐算法部署为公开 Render Web Service。仓库已提供 `render.yaml`，部署时会自动安装依赖、启动服务并检查 `/api/health`。
 
-Render 免费实例适合作业和论文备用演示：闲置一段时间后会休眠，首次访问可能需要等待约一分钟。未配置 `OPENAI_API_KEY` 时系统自动使用离线规则算法，主要演示流程仍可完整运行。
+Render 免费实例适合作业和论文备用演示：闲置一段时间后会休眠，首次访问可能需要等待约一分钟。未配置大模型密钥时系统自动使用离线规则算法，主要演示流程仍可完整运行。
 
 ## 一、系统包含什么
 
@@ -53,11 +53,20 @@ start.bat
 
 ## 三、大语言模型配置
 
-Vercel 生产部署通过 AI Gateway 和部署身份令牌调用 `openai/gpt-5.4-mini`，模型密钥不会传到浏览器。AI Gateway 需要 Vercel 团队完成账户验证并启用额度；否则会诚实降级到六个内置品类。若在本地或 Render 运行，可设置 `OPENAI_API_KEY`；也可用 `AI_GATEWAY_API_KEY` 连接 Vercel AI Gateway。
+推荐直接使用 Kimi。请在 Vercel 项目的 Environment Variables 中设置以下服务端变量，然后重新部署：
+
+```text
+LLM_PROVIDER=kimi
+MOONSHOT_API_KEY=你的 Kimi Key
+MOONSHOT_MODEL=kimi-k3
+MOONSHOT_BASE_URL=https://api.moonshot.ai/v1
+```
+
+代码也兼容 `KIMI_API_KEY` 这个变量名，但推荐使用 Kimi 官方文档中的 `MOONSHOT_API_KEY`。如果密钥来自使用其他 API 地址的控制台，请把 `MOONSHOT_BASE_URL` 改为该控制台标明的地址。也可以选择设置 `OPENAI_API_KEY`，或通过 `AI_GATEWAY_API_KEY` / Vercel 部署身份令牌连接 AI Gateway。`LLM_PROVIDER` 可取 `kimi`、`openai` 或 `vercel`。
 
 模型把回答约束为结构化 JSON：区分普通聊天、需要追问和可以推荐三种意图，并携带品类、预算、关注点与三款候选。若模型不可用，六个内置数据品类仍可通过离线算法完整演示；任意品类的开放推荐则需要模型服务在线。
 
-请勿把包含真实密钥的 `.env` 提交给老师或上传到公开仓库。
+这些变量只由后端读取，不要添加 `NEXT_PUBLIC_` 前缀。请勿把包含真实密钥的 `.env` 提交给老师或上传到公开仓库。
 
 ## 四、课堂演示建议
 

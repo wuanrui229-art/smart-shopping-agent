@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from time import perf_counter
@@ -59,23 +58,14 @@ def _runtime_oidc_token(request: Request) -> str:
 
 @app.get("/api/health")
 def health(request: Request) -> dict:
-    runtime_gateway_enabled = bool(_runtime_oidc_token(request))
-    direct_openai_enabled = bool(open_catalog.openai_api_key)
+    catalog = open_catalog.describe(_runtime_oidc_token(request))
     return {
         "status": "ok",
         "service": "shopping-agent",
-        "llm_enabled": runtime_gateway_enabled or open_catalog.enabled or pipeline.llm.enabled,
-        "model": (
-            os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
-            if direct_openai_enabled
-            else (
-                "openai/gpt-5.4-mini"
-                if runtime_gateway_enabled
-                else (open_catalog.model if open_catalog.enabled else (pipeline.llm.model if pipeline.llm.enabled else None))
-            )
-        ),
-        "open_catalog_enabled": runtime_gateway_enabled or open_catalog.enabled,
-        "model_provider": "openai-direct" if direct_openai_enabled else ("vercel-ai-gateway" if runtime_gateway_enabled else None),
+        "llm_enabled": catalog["enabled"] or pipeline.llm.enabled,
+        "model": catalog["model"] if catalog["enabled"] else (pipeline.llm.model if pipeline.llm.enabled else None),
+        "open_catalog_enabled": catalog["enabled"],
+        "model_provider": catalog["provider"] if catalog["enabled"] else None,
     }
 
 

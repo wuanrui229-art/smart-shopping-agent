@@ -149,6 +149,48 @@ def test_explicit_openai_key_overrides_vercel_runtime_oidc(monkeypatch):
     }
 
 
+def test_kimi_key_enables_open_catalog_and_overrides_vercel_oidc(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "kimi")
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-kimi-key")
+    monkeypatch.setenv("MOONSHOT_MODEL", "kimi-k3")
+    monkeypatch.setenv("VERCEL_OIDC_TOKEN", "test-vercel-oidc")
+    client = OpenCatalogChatClient()
+    captured = {}
+
+    def fake_post(payload, api_key, base_url):
+        captured.update({
+            "model": payload["model"],
+            "api_key": api_key,
+            "base_url": base_url,
+            "response_format": payload["response_format"],
+            "reasoning_effort": payload.get("reasoning_effort"),
+        })
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"intent":"chat","language":"zh","reply":"你好，我可以自由聊天并推荐任意消费品类。","category_label":"","supported_category":null,"demand_summary":"","budget_label":"","key_concerns":[],"market_notes":[],"recommendations":[]}'
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(client, "_post", fake_post)
+    result = client.respond("你好", runtime_oidc_token="request-oidc-token")
+
+    assert result["status"] == "conversation"
+    assert client.describe("request-oidc-token") == {
+        "enabled": True,
+        "provider": "kimi-direct",
+        "model": "kimi-k3",
+    }
+    assert captured["model"] == "kimi-k3"
+    assert captured["api_key"] == "test-kimi-key"
+    assert captured["base_url"] == "https://api.moonshot.ai/v1"
+    assert captured["response_format"]["type"] == "json_schema"
+    assert captured["reasoning_effort"] == "low"
+
+
 def test_price_sensitivity_reorders_running_shoe_alternatives():
     query = "我想买一双适合日常训练的跑鞋"
     default = recommend_original(query, {"price_sensitivity": 50, "decision_style": "balanced"})

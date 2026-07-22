@@ -4,5 +4,7 @@ __pycache__/
 .vercel/
 *.pyc
 .env
+.env.local
+.env.*.local
 data/*.db
 .DS_Store
