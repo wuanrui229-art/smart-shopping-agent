@@ -47,29 +47,29 @@ def _catalog_boundary_response(user_input: str) -> dict[str, Any]:
     )
     if unsupported_label:
         message = (
-            f"抱歉，课程演示版目前还没有{unsupported_label}数据，因此不能负责任地推荐。"
-            f"现在支持：{SUPPORTED_CATEGORIES_ZH}。你可以任选一类，我会继续分析。"
+            f"抱歉，开放品类的大模型服务当前不可用，所以暂时无法为{unsupported_label}生成可靠建议。"
+            f"六个内置数据品类仍可离线推荐：{SUPPORTED_CATEGORIES_ZH}。模型服务恢复后，其他品类也可以使用。"
             if chinese
-            else f"Sorry, the course demo does not yet include {unsupported_label} data, so I cannot recommend it responsibly. "
-            f"It currently supports {SUPPORTED_CATEGORIES_EN}."
+            else f"Sorry, the open-category model service is currently unavailable, so I cannot generate reliable {unsupported_label} guidance. "
+            f"The six offline catalog categories still work: {SUPPORTED_CATEGORIES_EN}. Other categories work when the model service is available."
         )
         return {"status": "unsupported_category", "message": message, "questions": list(DEMO_DATA)}
 
     if any(term in normalized for term in FRUSTRATION_TERMS):
         message = (
-            f"抱歉，刚才没有正确理解你的需求。这个演示版目前只支持{SUPPORTED_CATEGORIES_ZH}；"
-            "遇到其他品类时我应该明确说明暂不支持，而不是重复追问。"
+            f"抱歉，刚才的回答没有解决你的问题。开放品类模型服务当前不可用；"
+            f"现在仍可离线推荐{SUPPORTED_CATEGORIES_ZH}，模型恢复后其他品类也可以使用。"
             if chinese
-            else f"Sorry, I did not understand your request correctly. This demo currently supports {SUPPORTED_CATEGORIES_EN}; "
-            "for other categories I should clearly say they are not supported instead of repeating the same question."
+            else f"Sorry, that response did not solve your problem. The open-category model service is currently unavailable. "
+            f"The offline catalog still supports {SUPPORTED_CATEGORIES_EN}, and other categories return when the model service is restored."
         )
         return {"status": "conversation", "message": message}
 
     if normalized in GREETING_TERMS:
         message = (
-            f"你好！我是 Smart Shopping AI。目前可以推荐{SUPPORTED_CATEGORIES_ZH}。告诉我你想买哪一类就可以。"
+            f"你好！我是 Smart Shopping AI。开放式对话服务当前不可用，但仍可离线推荐{SUPPORTED_CATEGORIES_ZH}。"
             if chinese
-            else f"Hi! I am Smart Shopping AI. I can currently recommend {SUPPORTED_CATEGORIES_EN}. Tell me which one you need."
+            else f"Hi! I am Smart Shopping AI. Open chat is currently unavailable, but the offline catalog still supports {SUPPORTED_CATEGORIES_EN}."
         )
         return {"status": "conversation", "message": message}
 
@@ -83,9 +83,9 @@ def _catalog_boundary_response(user_input: str) -> dict[str, Any]:
         return {"status": "needs_clarification", "message": message, "questions": list(DEMO_DATA)}
 
     message = (
-        f"我暂时还不能确定商品类别。目前支持：{SUPPORTED_CATEGORIES_ZH}。请告诉我其中一类。"
+        f"开放式大模型服务当前不可用。六个内置数据品类仍可离线推荐：{SUPPORTED_CATEGORIES_ZH}。"
         if chinese
-        else f"I cannot determine the product category yet. The demo currently supports {SUPPORTED_CATEGORIES_EN}."
+        else f"The open-chat model service is currently unavailable. The offline catalog still supports {SUPPORTED_CATEGORIES_EN}."
     )
     return {"status": "needs_clarification", "message": message, "questions": list(DEMO_DATA)}
 

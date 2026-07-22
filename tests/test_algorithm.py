@@ -68,7 +68,7 @@ def test_original_demo_handles_conversation_and_catalog_boundaries():
 
     unsupported = recommend_original("我要买化妆品")
     assert unsupported["status"] == "unsupported_category"
-    assert "暂不" in unsupported["message"] or "还没有" in unsupported["message"]
+    assert "模型服务当前不可用" in unsupported["message"]
 
     broad_bag = recommend_original("i want to buy a bag")
     assert broad_bag["status"] == "needs_clarification"

@@ -53,7 +53,7 @@ start.bat
 
 ## 三、大语言模型配置
 
-Vercel 生产部署通过 AI Gateway 和部署身份令牌调用 `openai/gpt-5.4-mini`，模型密钥不会传到浏览器。若在本地或 Render 运行，可设置 `OPENAI_API_KEY`；也可用 `AI_GATEWAY_API_KEY` 连接 Vercel AI Gateway。
+Vercel 生产部署通过 AI Gateway 和部署身份令牌调用 `openai/gpt-5.4-mini`，模型密钥不会传到浏览器。AI Gateway 需要 Vercel 团队完成账户验证并启用额度；否则会诚实降级到六个内置品类。若在本地或 Render 运行，可设置 `OPENAI_API_KEY`；也可用 `AI_GATEWAY_API_KEY` 连接 Vercel AI Gateway。
 
 模型把回答约束为结构化 JSON：区分普通聊天、需要追问和可以推荐三种意图，并携带品类、预算、关注点与三款候选。若模型不可用，六个内置数据品类仍可通过离线算法完整演示；任意品类的开放推荐则需要模型服务在线。
 
