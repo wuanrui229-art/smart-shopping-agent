@@ -1,3 +1,7 @@
+from io import BytesIO
+from urllib.error import HTTPError
+
+import algorithm.open_catalog as open_catalog_module
 from algorithm.demand_parser import parse_demand_rules
 from algorithm.open_catalog import OpenCatalogChatClient
 from algorithm.original_demo import detect_category, recommend_original
@@ -189,6 +193,43 @@ def test_kimi_key_enables_open_catalog_and_overrides_vercel_oidc(monkeypatch):
     assert captured["base_url"] == "https://api.moonshot.cn/v1"
     assert captured["response_format"]["type"] == "json_schema"
     assert captured["reasoning_effort"] == "low"
+
+
+def test_kimi_overload_retries_then_uses_fallback_model(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "kimi")
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-kimi-key")
+    monkeypatch.setenv("MOONSHOT_MODEL", "kimi-k3")
+    monkeypatch.delenv("MOONSHOT_FALLBACK_MODELS", raising=False)
+    monkeypatch.setattr(open_catalog_module, "sleep", lambda _: None)
+    client = OpenCatalogChatClient()
+    attempted_models = []
+
+    def fake_post(payload, api_key, base_url):
+        attempted_models.append(payload["model"])
+        if payload["model"] == "kimi-k3":
+            raise HTTPError(
+                url=f"{base_url}/chat/completions",
+                code=429,
+                msg="Too Many Requests",
+                hdrs=None,
+                fp=BytesIO(b'{"error":{"type":"engine_overloaded_error"}}'),
+            )
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"intent":"chat","language":"zh","reply":"你好！","category_label":"","supported_category":null,"demand_summary":"","budget_label":"","key_concerns":[],"market_notes":[],"recommendations":[]}'
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(client, "_post", fake_post)
+    result = client.respond("你好")
+
+    assert result["status"] == "conversation"
+    assert result["model"] == "kimi-k2.5"
+    assert attempted_models == ["kimi-k3", "kimi-k3", "kimi-k2.5"]
 
 
 def test_price_sensitivity_reorders_running_shoe_alternatives():

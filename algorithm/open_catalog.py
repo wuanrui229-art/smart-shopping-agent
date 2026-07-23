@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from time import sleep
 from typing import Any, Optional
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus
@@ -100,6 +101,20 @@ class OpenCatalogChatClient:
     def enabled(self) -> bool:
         return bool(self.api_key)
 
+    @staticmethod
+    def _model_candidates(config: dict[str, str]) -> list[str]:
+        primary = config["model"]
+        if config["provider"] != "kimi-direct":
+            return [primary]
+        configured = (
+            os.getenv("MOONSHOT_FALLBACK_MODELS", "").strip()
+            or os.getenv("KIMI_FALLBACK_MODELS", "").strip()
+        )
+        fallbacks = [item.strip() for item in configured.split(",") if item.strip()]
+        if not fallbacks:
+            fallbacks = ["kimi-k2.5"]
+        return list(dict.fromkeys([primary, *fallbacks]))
+
     def respond(
         self,
         user_input: str,
@@ -140,31 +155,57 @@ class OpenCatalogChatClient:
                 ),
             },
         ]
-        payload = {
-            "model": model,
-            "messages": messages,
-            "stream": False,
-            "max_tokens": 3200,
-            "response_format": {"type": "json_schema", "json_schema": self._response_schema()},
-        }
-        if config["provider"] == "kimi-direct" and model.startswith("kimi-k3"):
-            # K3 defaults to maximum thinking effort; low is more responsive for a live classroom demo.
-            payload["reasoning_effort"] = "low"
-        try:
-            response = self._post(payload, api_key=api_key, base_url=base_url)
-            content = response["choices"][0]["message"]["content"]
-            data = json.loads(content)
-            return self._normalize(data, user_input, preferences or {}, model=model)
-        except HTTPError as error:
-            try:
-                detail = error.read().decode("utf-8", errors="replace")[:500].replace("\n", " ")
-            except Exception:
-                detail = "unavailable"
-            print(f"open_catalog_llm_error status={error.code} detail={detail}")
-            return None
-        except (URLError, TimeoutError, ValueError, KeyError, TypeError) as error:
-            print(f"open_catalog_llm_error type={type(error).__name__}")
-            return None
+        for candidate_model in self._model_candidates(config):
+            payload = {
+                "model": candidate_model,
+                "messages": messages,
+                "stream": False,
+                "max_tokens": 3200,
+                "response_format": {"type": "json_schema", "json_schema": self._response_schema()},
+            }
+            if config["provider"] == "kimi-direct" and candidate_model.startswith("kimi-k3"):
+                # K3 defaults to maximum thinking effort; low is more responsive for a live classroom demo.
+                payload["reasoning_effort"] = "low"
+
+            attempts = 2 if config["provider"] == "kimi-direct" else 1
+            for attempt in range(1, attempts + 1):
+                try:
+                    response = self._post(payload, api_key=api_key, base_url=base_url)
+                    content = response["choices"][0]["message"]["content"]
+                    data = json.loads(content)
+                    return self._normalize(
+                        data,
+                        user_input,
+                        preferences or {},
+                        model=candidate_model,
+                    )
+                except HTTPError as error:
+                    try:
+                        detail = error.read().decode("utf-8", errors="replace")[:500].replace("\n", " ")
+                    except Exception:
+                        detail = "unavailable"
+                    print(
+                        "open_catalog_llm_error "
+                        f"model={candidate_model} attempt={attempt} status={error.code} detail={detail}"
+                    )
+                    retryable = error.code == 429 or 500 <= error.code < 600
+                    if not retryable:
+                        return None
+                    if attempt < attempts:
+                        sleep(0.6 * attempt)
+                except (URLError, TimeoutError) as error:
+                    print(
+                        "open_catalog_llm_error "
+                        f"model={candidate_model} attempt={attempt} type={type(error).__name__}"
+                    )
+                    return None
+                except (ValueError, KeyError, TypeError) as error:
+                    print(
+                        "open_catalog_llm_error "
+                        f"model={candidate_model} attempt={attempt} type={type(error).__name__}"
+                    )
+                    break
+        return None
 
     @staticmethod
     def _post(payload: dict[str, Any], api_key: str, base_url: str) -> dict[str, Any]:
