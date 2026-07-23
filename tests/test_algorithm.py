@@ -265,6 +265,7 @@ def test_kimi_timeout_uses_vercel_gateway_when_oidc_is_available(monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "kimi")
     monkeypatch.setenv("MOONSHOT_API_KEY", "test-kimi-key")
     monkeypatch.setenv("MOONSHOT_MODEL", "kimi-k3")
+    monkeypatch.setenv("ENABLE_AI_GATEWAY_FALLBACK", "1")
     monkeypatch.delenv("AI_GATEWAY_MODEL", raising=False)
     client = OpenCatalogChatClient()
     attempts = []
@@ -292,6 +293,18 @@ def test_kimi_timeout_uses_vercel_gateway_when_oidc_is_available(monkeypatch):
         ("kimi-k3", "test-kimi-key", "https://api.moonshot.cn/v1"),
         ("openai/gpt-5.5", "runtime-oidc-token", "https://ai-gateway.vercel.sh/v1"),
     ]
+
+
+def test_vercel_prefers_faster_kimi_model_without_gateway(monkeypatch):
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setenv("LLM_PROVIDER", "kimi")
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-kimi-key")
+    monkeypatch.setenv("MOONSHOT_MODEL", "kimi-k3")
+    monkeypatch.delenv("ENABLE_AI_GATEWAY_FALLBACK", raising=False)
+    client = OpenCatalogChatClient()
+
+    assert client._model_candidates(client._resolve_provider()) == ["kimi-k2.5", "kimi-k3"]
+    assert client._gateway_fallback_config("runtime-oidc-token")["api_key"] == ""
 
 
 def test_price_sensitivity_reorders_running_shoe_alternatives():

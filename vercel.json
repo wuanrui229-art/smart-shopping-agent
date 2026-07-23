@@ -4,7 +4,7 @@
     "app.py": {
       "includeFiles": "{frontend/**,algorithm/original_demo_data.json}",
       "excludeFiles": "{tests/**,docs/**,.venv/**,.pytest_cache/**,data/**}",
-      "maxDuration": 45
+      "maxDuration": 60
     }
   }
 }

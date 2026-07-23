@@ -90,6 +90,9 @@ class OpenCatalogChatClient:
         return {"provider": "", "api_key": "", "base_url": "", "model": ""}
 
     def _gateway_fallback_config(self, runtime_oidc_token: str = "") -> dict[str, str]:
+        enabled = os.getenv("ENABLE_AI_GATEWAY_FALLBACK", "").strip().casefold()
+        if enabled not in {"1", "true", "yes", "on"}:
+            return {"provider": "", "api_key": "", "base_url": "", "model": ""}
         return {
             "provider": "vercel-ai-gateway",
             "api_key": runtime_oidc_token.strip() or self.gateway_api_key,
@@ -121,7 +124,12 @@ class OpenCatalogChatClient:
         fallbacks = [item.strip() for item in configured.split(",") if item.strip()]
         if not fallbacks:
             fallbacks = ["kimi-k2.5"]
-        return list(dict.fromkeys([primary, *fallbacks]))
+        candidates = list(dict.fromkeys([primary, *fallbacks]))
+        if os.getenv("VERCEL", "").strip() and "kimi-k2.5" in candidates:
+            # K2.5 is typically faster for the cross-region classroom demo.
+            candidates.remove("kimi-k2.5")
+            candidates.insert(0, "kimi-k2.5")
+        return candidates
 
     def respond(
         self,
@@ -236,9 +244,8 @@ class OpenCatalogChatClient:
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             method="POST",
         )
-        # The China endpoint gets a short window so a globally reachable gateway
-        # fallback still fits inside Vercel's 45-second function limit.
-        timeout = 12 if "api.moonshot.cn" in base_url else 24
+        # Allow two Kimi models to run within Vercel's 60-second function limit.
+        timeout = 27 if "api.moonshot.cn" in base_url else 24
         with urlopen(request, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
 
