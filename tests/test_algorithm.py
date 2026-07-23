@@ -232,6 +232,35 @@ def test_kimi_overload_retries_then_uses_fallback_model(monkeypatch):
     assert attempted_models == ["kimi-k3", "kimi-k3", "kimi-k2.5"]
 
 
+def test_kimi_timeout_moves_directly_to_fallback_model(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "kimi")
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-kimi-key")
+    monkeypatch.setenv("MOONSHOT_MODEL", "kimi-k3")
+    client = OpenCatalogChatClient()
+    attempted_models = []
+
+    def fake_post(payload, api_key, base_url):
+        attempted_models.append(payload["model"])
+        if payload["model"] == "kimi-k3":
+            raise TimeoutError("primary model timed out")
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"intent":"chat","language":"zh","reply":"备用模型已响应。","category_label":"","supported_category":null,"demand_summary":"","budget_label":"","key_concerns":[],"market_notes":[],"recommendations":[]}'
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(client, "_post", fake_post)
+    result = client.respond("你好")
+
+    assert result["status"] == "conversation"
+    assert result["model"] == "kimi-k2.5"
+    assert attempted_models == ["kimi-k3", "kimi-k2.5"]
+
+
 def test_price_sensitivity_reorders_running_shoe_alternatives():
     query = "我想买一双适合日常训练的跑鞋"
     default = recommend_original(query, {"price_sensitivity": 50, "decision_style": "balanced"})

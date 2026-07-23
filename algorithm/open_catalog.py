@@ -160,7 +160,7 @@ class OpenCatalogChatClient:
                 "model": candidate_model,
                 "messages": messages,
                 "stream": False,
-                "max_tokens": 3200,
+                "max_tokens": 2000,
                 "response_format": {"type": "json_schema", "json_schema": self._response_schema()},
             }
             if config["provider"] == "kimi-direct" and candidate_model.startswith("kimi-k3"):
@@ -198,7 +198,9 @@ class OpenCatalogChatClient:
                         "open_catalog_llm_error "
                         f"model={candidate_model} attempt={attempt} type={type(error).__name__}"
                     )
-                    return None
+                    if config["provider"] != "kimi-direct":
+                        return None
+                    break
                 except (ValueError, KeyError, TypeError) as error:
                     print(
                         "open_catalog_llm_error "
@@ -215,7 +217,8 @@ class OpenCatalogChatClient:
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             method="POST",
         )
-        with urlopen(request, timeout=38) as response:
+        # Leave enough time inside Vercel's 45-second function limit to try a backup model.
+        with urlopen(request, timeout=16) as response:
             return json.loads(response.read().decode("utf-8"))
 
     @staticmethod
