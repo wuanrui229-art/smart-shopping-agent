@@ -261,6 +261,39 @@ def test_kimi_timeout_moves_directly_to_fallback_model(monkeypatch):
     assert attempted_models == ["kimi-k3", "kimi-k2.5"]
 
 
+def test_kimi_timeout_uses_vercel_gateway_when_oidc_is_available(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "kimi")
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-kimi-key")
+    monkeypatch.setenv("MOONSHOT_MODEL", "kimi-k3")
+    monkeypatch.delenv("AI_GATEWAY_MODEL", raising=False)
+    client = OpenCatalogChatClient()
+    attempts = []
+
+    def fake_post(payload, api_key, base_url):
+        attempts.append((payload["model"], api_key, base_url))
+        if base_url == "https://api.moonshot.cn/v1":
+            raise TimeoutError("China endpoint timed out")
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"intent":"chat","language":"zh","reply":"网关备用模型已响应。","category_label":"","supported_category":null,"demand_summary":"","budget_label":"","key_concerns":[],"market_notes":[],"recommendations":[]}'
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(client, "_post", fake_post)
+    result = client.respond("你好", runtime_oidc_token="runtime-oidc-token")
+
+    assert result["status"] == "conversation"
+    assert result["model"] == "openai/gpt-5.5"
+    assert attempts == [
+        ("kimi-k3", "test-kimi-key", "https://api.moonshot.cn/v1"),
+        ("openai/gpt-5.5", "runtime-oidc-token", "https://ai-gateway.vercel.sh/v1"),
+    ]
+
+
 def test_price_sensitivity_reorders_running_shoe_alternatives():
     query = "我想买一双适合日常训练的跑鞋"
     default = recommend_original(query, {"price_sensitivity": 50, "decision_style": "balanced"})

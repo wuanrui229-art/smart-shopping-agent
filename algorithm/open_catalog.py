@@ -71,7 +71,7 @@ class OpenCatalogChatClient:
                 "provider": "vercel-ai-gateway",
                 "api_key": runtime_oidc_token.strip() or self.gateway_api_key,
                 "base_url": "https://ai-gateway.vercel.sh/v1",
-                "model": os.getenv("AI_GATEWAY_MODEL", "openai/gpt-5.4-mini").strip(),
+                "model": os.getenv("AI_GATEWAY_MODEL", "openai/gpt-5.5").strip(),
             },
         }
         aliases = {
@@ -88,6 +88,14 @@ class OpenCatalogChatClient:
             if providers[provider]["api_key"]:
                 return providers[provider]
         return {"provider": "", "api_key": "", "base_url": "", "model": ""}
+
+    def _gateway_fallback_config(self, runtime_oidc_token: str = "") -> dict[str, str]:
+        return {
+            "provider": "vercel-ai-gateway",
+            "api_key": runtime_oidc_token.strip() or self.gateway_api_key,
+            "base_url": "https://ai-gateway.vercel.sh/v1",
+            "model": os.getenv("AI_GATEWAY_MODEL", "openai/gpt-5.5").strip(),
+        }
 
     def describe(self, runtime_oidc_token: str = "") -> dict[str, Any]:
         config = self._resolve_provider(runtime_oidc_token)
@@ -126,9 +134,6 @@ class OpenCatalogChatClient:
         api_key = config["api_key"]
         if not api_key:
             return None
-        base_url = config["base_url"]
-        model = config["model"]
-
         safe_history = [
             {"role": item["role"], "content": str(item["content"])[:2000]}
             for item in (history or [])[-8:]
@@ -155,7 +160,19 @@ class OpenCatalogChatClient:
                 ),
             },
         ]
-        for candidate_model in self._model_candidates(config):
+        gateway_fallback = self._gateway_fallback_config(runtime_oidc_token or "")
+        primary_models = self._model_candidates(config)
+        if gateway_fallback["api_key"] and config["provider"] != "vercel-ai-gateway":
+            # Keep the request inside Vercel's 45-second limit: try the configured
+            # Kimi model once, then use the globally reachable gateway.
+            primary_models = primary_models[:1]
+        candidates = [(config, candidate_model) for candidate_model in primary_models]
+        if gateway_fallback["api_key"] and config["provider"] != "vercel-ai-gateway":
+            candidates.append((gateway_fallback, gateway_fallback["model"]))
+
+        for active_config, candidate_model in candidates:
+            active_api_key = active_config["api_key"]
+            active_base_url = active_config["base_url"]
             payload = {
                 "model": candidate_model,
                 "messages": messages,
@@ -163,14 +180,18 @@ class OpenCatalogChatClient:
                 "max_tokens": 2000,
                 "response_format": {"type": "json_schema", "json_schema": self._response_schema()},
             }
-            if config["provider"] == "kimi-direct" and candidate_model.startswith("kimi-k3"):
+            if active_config["provider"] == "kimi-direct" and candidate_model.startswith("kimi-k3"):
                 # K3 defaults to maximum thinking effort; low is more responsive for a live classroom demo.
                 payload["reasoning_effort"] = "low"
 
-            attempts = 2 if config["provider"] == "kimi-direct" else 1
+            attempts = 2 if active_config["provider"] == "kimi-direct" else 1
             for attempt in range(1, attempts + 1):
                 try:
-                    response = self._post(payload, api_key=api_key, base_url=base_url)
+                    response = self._post(
+                        payload,
+                        api_key=active_api_key,
+                        base_url=active_base_url,
+                    )
                     content = response["choices"][0]["message"]["content"]
                     data = json.loads(content)
                     return self._normalize(
@@ -190,7 +211,7 @@ class OpenCatalogChatClient:
                     )
                     retryable = error.code == 429 or 500 <= error.code < 600
                     if not retryable:
-                        return None
+                        break
                     if attempt < attempts:
                         sleep(0.6 * attempt)
                 except (URLError, TimeoutError) as error:
@@ -198,8 +219,6 @@ class OpenCatalogChatClient:
                         "open_catalog_llm_error "
                         f"model={candidate_model} attempt={attempt} type={type(error).__name__}"
                     )
-                    if config["provider"] != "kimi-direct":
-                        return None
                     break
                 except (ValueError, KeyError, TypeError) as error:
                     print(
@@ -217,8 +236,10 @@ class OpenCatalogChatClient:
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             method="POST",
         )
-        # Leave enough time inside Vercel's 45-second function limit to try a backup model.
-        with urlopen(request, timeout=16) as response:
+        # The China endpoint gets a short window so a globally reachable gateway
+        # fallback still fits inside Vercel's 45-second function limit.
+        timeout = 12 if "api.moonshot.cn" in base_url else 24
+        with urlopen(request, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
 
     @staticmethod
