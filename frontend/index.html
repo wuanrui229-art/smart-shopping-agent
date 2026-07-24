@@ -210,7 +210,7 @@
     <div class="app">
         <!-- Left Icon Bar -->
         <div class="icon-bar">
-            <button class="icon-btn active" id="btnHome" title="Home" onclick="showHome()">
+            <button class="icon-btn active" id="btnHome" title="Home" onclick="returnHome()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </button>
             <button class="icon-btn" id="btnHistory" title="History" onclick="openPanel('history')">
@@ -309,6 +309,35 @@ state.userId = state.userId || localStorage.getItem('ssai_user_id') || `user_${c
 localStorage.setItem('ssai_user_id', state.userId);
 function generateId() { return Math.random().toString(36).substring(2, 10); }
 function persistState() { localStorage.setItem('ssai_state', JSON.stringify(state)); }
+function resetCurrentConversation() {
+    state.messages = [];
+    state.lastDecision = null;
+    state.hasInteracted = false;
+    state.currentSessionId = generateId();
+    document.getElementById('chatMessages').innerHTML = '';
+    document.getElementById('decisionPanel').innerHTML = '';
+    persistState();
+}
+async function deleteServerSession(id) {
+    try {
+        const response = await fetch(`/api/sessions/${encodeURIComponent(state.userId)}/${encodeURIComponent(id)}`, {method: 'DELETE'});
+        if (!response.ok && response.status !== 404) throw new Error(`HTTP ${response.status}`);
+        return true;
+    } catch (_) {
+        showToast('Local history cleared; server cleanup will be retried next time.', 'info');
+        return false;
+    }
+}
+async function deleteAllServerSessions() {
+    try {
+        const response = await fetch(`/api/sessions/${encodeURIComponent(state.userId)}`, {method: 'DELETE'});
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return true;
+    } catch (_) {
+        showToast('Local history cleared; server cleanup will be retried next time.', 'info');
+        return false;
+    }
+}
 function escapeHtml(value = '') { return String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])); }
 function plainTextFromHtml(value = '') { const node = document.createElement('div'); node.innerHTML = String(value); return node.textContent || ''; }
 function sanitizeResult(value) {
@@ -487,7 +516,7 @@ function renderHistoryPanel() {
         return;
     }
 
-    let html = '<div class="session-list">';
+    let html = '<button class="btn-danger" onclick="clearConversationHistory()" style="width:100%;margin-bottom:16px;">Clear All Conversation History</button><div class="session-list">';
     // Sort by timestamp descending
     const sorted = sessionIds.sort((a, b) => {
         const ta = state.sessions[a].ts || '';
@@ -532,23 +561,29 @@ function loadSession(id) {
     showToast('Session loaded', 'success');
 }
 
-function deleteSession(id) {
+async function deleteSession(id) {
     if (!confirm('Delete this session? This cannot be undone.')) return;
     const wasCurrent = id === state.currentSessionId;
     delete state.sessions[id];
-    // If we deleted the currently active session, wipe the chat and go home
     if (wasCurrent) {
-        state.messages = [];
-        state.lastDecision = null;
-        state.hasInteracted = false;
-        state.currentSessionId = generateId();
-        document.getElementById('chatMessages').innerHTML = '';
-        document.getElementById('decisionPanel').innerHTML = '';
+        resetCurrentConversation();
         showHome();
     }
     persistState();
     renderHistoryPanel();
     showToast('Session deleted', 'info');
+    await deleteServerSession(id);
+}
+
+async function clearConversationHistory() {
+    if (!confirm('Delete all conversation history? This cannot be undone.')) return;
+    state.sessions = {};
+    resetCurrentConversation();
+    showHome();
+    renderHistoryPanel();
+    closePanel();
+    showToast('All conversation history deleted', 'info');
+    await deleteAllServerSessions();
 }
 
 // ── SETTINGS PANEL ──
@@ -672,24 +707,21 @@ async function loadPreferencesFromBackend() {
     }
 }
 
-function clearAllData() {
+async function clearAllData() {
     if (!confirm('This will delete all sessions AND reset preferences. Continue?')) return;
     state.sessions = {};
-    state.messages = [];
-    state.lastDecision = null;
-    state.hasInteracted = false;
-    state.currentSessionId = generateId();
     state.preferences = { brands: [], avoid: "", price_sensitivity: 50, decision_style: "Balanced" };
-    document.getElementById('chatMessages').innerHTML = '';
-    document.getElementById('decisionPanel').innerHTML = '';
+    resetCurrentConversation();
     persistState();
     showHome();
     closePanel();
     showToast('All data cleared', 'info');
+    await deleteAllServerSessions();
 }
 
-function clearAllMemory() {
+async function clearAllMemory() {
     if (!confirm('WARNING: This will erase EVERYTHING including all conversations and settings. This cannot be undone!')) return;
+    const userId = state.userId;
     localStorage.removeItem('ssai_state');
     state = {
         sessions: {},
@@ -697,11 +729,16 @@ function clearAllMemory() {
         hasInteracted: false,
         currentSessionId: generateId(),
         lastDecision: null,
+        userId,
         preferences: { brands: [], avoid: "", price_sensitivity: 50, decision_style: "Balanced" }
     };
+    document.getElementById('chatMessages').innerHTML = '';
+    document.getElementById('decisionPanel').innerHTML = '';
+    persistState();
     showHome();
     closePanel();
     showToast('All memory cleared. Starting fresh.', 'info');
+    await deleteAllServerSessions();
 }
 
 // ── NAVIGATION ──
@@ -715,6 +752,12 @@ function showHome() {
     persistState();
 }
 
+function returnHome() {
+    if (state.messages.length > 0) saveSession();
+    resetCurrentConversation();
+    showHome();
+}
+
 function showChat() {
     document.getElementById('homeView').classList.add('hidden');
     document.getElementById('chatView').classList.add('active');
@@ -723,7 +766,14 @@ function showChat() {
 }
 
 // ── SEND MESSAGE ──
-function sendFromHome() { const input = document.getElementById('homeInput'); const text = input.value.trim(); if (!text) return; input.value = ''; processMessage(text); }
+function sendFromHome() {
+    const input = document.getElementById('homeInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    if (state.messages.length > 0) resetCurrentConversation();
+    processMessage(text);
+}
 function sendFromChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if (!text) return; input.value = ''; processMessage(text); }
 function quickAsk(text) { processMessage(text); }
 
@@ -733,6 +783,7 @@ async function processMessage(text) {
     showChat();
     state.hasInteracted = true;
     state.messages.push({role:'user',content:text});
+    saveSession();
     renderChatMessages();
     resetBackendTrace();
     document.getElementById('decisionPanel').innerHTML = '';
@@ -741,8 +792,8 @@ async function processMessage(text) {
         if (payload.status !== 'success') {
             const responseMessage = payload.message || '请再补充一些商品需求。';
             state.messages.push({role:'assistant', content: escapeHtml(responseMessage), raw: responseMessage});
+            saveSession();
             renderChatMessages();
-            persistState();
             return;
         }
         const result = sanitizeResult(payload.result);
@@ -761,8 +812,8 @@ async function processMessage(text) {
         const message = error.name === 'AbortError' ? 'Request timed out. Please retry.' : error.message;
         failBackendTrace(message);
         state.messages.push({role:'assistant', content: `Service error: ${escapeHtml(message)}`});
+        saveSession();
         renderChatMessages();
-        persistState();
     } finally {
         setRequestBusy(false);
     }
@@ -781,6 +832,7 @@ function renderChatMessages() {
 // ── SESSION ──
 function saveSession() {
     const msgs = state.messages;
+    if (!msgs.length) return;
     let title = "New Session";
     for (const m of msgs) {
         if (m.role === 'user') {
@@ -799,12 +851,8 @@ function saveSession() {
 
 function newChat() {
     saveSession();
-    state.currentSessionId = generateId();
-    state.messages = [];
-    state.lastDecision = null;
-    state.hasInteracted = false;
+    resetCurrentConversation();
     showHome();
-    persistState();
     showToast('New chat started', 'success');
     closePanel();
 }
@@ -984,6 +1032,9 @@ function showToast(msg, type) {
 }
 
 // ── INIT ──
+if (state.messages.length > 0 && !state.sessions[state.currentSessionId]) {
+    saveSession();
+}
 if (state.hasInteracted && state.messages.length > 0) {
     showChat();
     renderChatMessages();

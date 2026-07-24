@@ -228,6 +228,11 @@ def sessions(user_id: str) -> list[dict]:
     return database.list_sessions(user_id)
 
 
+@app.delete("/api/sessions/{user_id}")
+def sessions_delete_all(user_id: str) -> dict:
+    return {"deleted": database.delete_all_sessions(user_id)}
+
+
 @app.get("/api/sessions/{user_id}/{session_id}")
 def session_detail(user_id: str, session_id: str) -> dict:
     result = database.get_session(user_id, session_id)

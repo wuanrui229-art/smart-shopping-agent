@@ -125,6 +125,28 @@ def test_original_chat_returns_contextual_non_catalog_answers(tmp_path):
         assert "化妆品" in cosmetics.json()["message"]
 
 
+def test_session_history_can_be_deleted_individually_or_all_at_once(tmp_path):
+    with make_client(tmp_path) as client:
+        for session_id in ("history-1", "history-2"):
+            response = client.post(
+                "/api/original/chat",
+                json={"user_input": "hi", "user_id": "history-user", "session_id": session_id},
+            )
+            assert response.status_code == 200
+
+        deleted = client.delete("/api/sessions/history-user/history-1")
+        assert deleted.status_code == 200
+        assert deleted.json() == {"deleted": True}
+        assert client.get("/api/sessions/history-user/history-1").status_code == 404
+        assert [item["session_id"] for item in client.get("/api/sessions/history-user").json()] == ["history-2"]
+
+        deleted_all = client.delete("/api/sessions/history-user")
+        assert deleted_all.status_code == 200
+        assert deleted_all.json() == {"deleted": 1}
+        assert client.get("/api/sessions/history-user").json() == []
+        assert client.get("/api/sessions/history-user/history-2").status_code == 404
+
+
 def test_preferences_round_trip(tmp_path):
     with make_client(tmp_path) as client:
         payload = {"brands": ["SoundPeak"], "avoid_terms": ["漏音"], "price_sensitivity": 75, "decision_style": "conservative"}

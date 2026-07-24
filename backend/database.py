@@ -105,8 +105,21 @@ def delete_session(user_id: str, session_id: str) -> bool:
         if not found:
             return False
         db.execute("DELETE FROM messages WHERE session_id=?", (session_id,))
+        db.execute("DELETE FROM cart_actions WHERE user_id=? AND session_id=?", (user_id, session_id))
         db.execute("DELETE FROM sessions WHERE session_id=?", (session_id,))
     return True
+
+
+def delete_all_sessions(user_id: str) -> int:
+    with connect() as db:
+        rows = db.execute("SELECT session_id FROM sessions WHERE user_id=?", (user_id,)).fetchall()
+        session_ids = [row["session_id"] for row in rows]
+        if session_ids:
+            placeholders = ",".join("?" for _ in session_ids)
+            db.execute(f"DELETE FROM messages WHERE session_id IN ({placeholders})", session_ids)
+        db.execute("DELETE FROM cart_actions WHERE user_id=?", (user_id,))
+        db.execute("DELETE FROM sessions WHERE user_id=?", (user_id,))
+    return len(session_ids)
 
 
 def get_preferences(user_id: str) -> dict[str, Any]:
