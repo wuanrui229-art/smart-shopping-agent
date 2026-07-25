@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -171,7 +172,27 @@ async def original_chat_stream(request: ChatRequest, http_request: Request) -> S
                 message=f"Detected category · {category_name}",
             )
 
-            result = _recommend_for_request(request, preferences, _runtime_oidc_token(http_request))
+            recommendation_task = asyncio.create_task(
+                asyncio.to_thread(
+                    _recommend_for_request,
+                    request,
+                    preferences,
+                    _runtime_oidc_token(http_request),
+                )
+            )
+            heartbeat_count = 0
+            while True:
+                try:
+                    result = await asyncio.wait_for(asyncio.shield(recommendation_task), timeout=8)
+                    break
+                except asyncio.TimeoutError:
+                    heartbeat_count += 1
+                    yield _ndjson_event(
+                        "stage",
+                        request_id,
+                        stage="model",
+                        message=f"Kimi is preparing recommendations · {heartbeat_count * 8}s",
+                    )
             if result["status"] == "success":
                 if result.get("mode") == "llm-open-catalog":
                     yield _ndjson_event(

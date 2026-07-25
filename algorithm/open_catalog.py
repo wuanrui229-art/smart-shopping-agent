@@ -53,7 +53,11 @@ class OpenCatalogChatClient:
                 "base_url": (
                     os.getenv("MOONSHOT_BASE_URL", "").strip()
                     or os.getenv("KIMI_BASE_URL", "").strip()
-                    or "https://api.moonshot.cn/v1"
+                    or (
+                        "https://api.moonshot.ai/v1"
+                        if os.getenv("VERCEL", "").strip()
+                        else "https://api.moonshot.cn/v1"
+                    )
                 ).rstrip("/"),
                 "model": (
                     os.getenv("MOONSHOT_MODEL", "").strip()
@@ -178,7 +182,7 @@ class OpenCatalogChatClient:
         # Leave enough time for FastAPI to close the NDJSON stream normally before
         # Vercel's 60-second function limit. A platform kill looks like a generic
         # browser "network error" even when the upstream model was the slow part.
-        request_budget = 45.0 if os.getenv("VERCEL", "").strip() else None
+        request_budget = 52.0 if os.getenv("VERCEL", "").strip() else None
         for active_config, candidate_model in candidates:
             active_api_key = active_config["api_key"]
             active_base_url = active_config["base_url"]
@@ -198,13 +202,13 @@ class OpenCatalogChatClient:
                 timeout_seconds: Optional[float] = None
                 if request_budget is not None:
                     remaining = request_budget - (monotonic() - started_at)
-                    if remaining <= 4:
+                    if remaining <= 5:
                         print(
                             "open_catalog_llm_budget_exhausted "
                             f"model={candidate_model} remaining_s={remaining:.1f}"
                         )
                         return None
-                    timeout_seconds = max(1.0, min(27.0, remaining - 3.0))
+                    timeout_seconds = max(1.0, min(48.0, remaining - 4.0))
                 try:
                     response = self._post(
                         payload,

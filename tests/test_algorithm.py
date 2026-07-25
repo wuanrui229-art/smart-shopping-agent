@@ -303,7 +303,9 @@ def test_vercel_keeps_configured_kimi_model_first_without_gateway(monkeypatch):
     monkeypatch.delenv("ENABLE_AI_GATEWAY_FALLBACK", raising=False)
     client = OpenCatalogChatClient()
 
-    assert client._model_candidates(client._resolve_provider()) == ["kimi-k3", "kimi-k2.5"]
+    config = client._resolve_provider()
+    assert config["base_url"] == "https://api.moonshot.ai/v1"
+    assert client._model_candidates(config) == ["kimi-k3", "kimi-k2.5"]
     assert client._gateway_fallback_config("runtime-oidc-token")["api_key"] == ""
 
 
@@ -335,7 +337,7 @@ def test_vercel_caps_fallback_timeout_to_finish_before_function_limit(monkeypatc
     result = client.respond("你好")
 
     assert result["status"] == "conversation"
-    assert attempts == [("kimi-k3", 27.0), ("kimi-k2.5", 14.0)]
+    assert attempts == [("kimi-k3", 48.0), ("kimi-k2.5", 20.0)]
 
 
 def test_price_sensitivity_reorders_running_shoe_alternatives():
