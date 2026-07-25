@@ -99,6 +99,7 @@ def test_open_catalog_normalizes_any_category_into_three_estimated_options():
             {
                 "title": f"Demo Coffee Machine {index}",
                 "brand": "Demo",
+                "amazon_query": f"Demo Coffee Machine Model {index}",
                 "estimated_price_usd": 99 + index * 20,
                 "fit_score": 90 - index,
                 "value_score": 88 - index,
@@ -120,6 +121,8 @@ def test_open_catalog_normalizes_any_category_into_three_estimated_options():
     assert result["mode"] == "llm-open-catalog"
     assert len(result["recs"]) == 3
     assert all(item["estimated"] is True for item in result["recs"])
+    assert "Demo+Coffee+Machine+Model+0" in result["recs"][0]["url"]
+    assert result["recs"][0]["amazon_query"] == "Demo Coffee Machine Model 0"
     assert "not live data" in result["source_note"]
 
 

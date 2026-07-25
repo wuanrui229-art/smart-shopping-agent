@@ -153,7 +153,11 @@ class OpenCatalogChatClient:
             "or ordinary conversation, answer naturally. For a shopping request that lacks essential information, ask exactly one useful "
             "clarifying question. When enough information is available, return exactly three realistic product candidates. "
             "Never claim live browsing, live prices, live stock, exact review counts, or current ratings. Prices are rough USD estimates from "
-            "general model knowledge and must be verified. The six curated categories are backpack, headphones, running_shoes, tablet, "
+            "general model knowledge and must be verified. For recommendations, choose products that are widely sold on Amazon.com. "
+            "Use a real, well-known English brand and model name; never invent a model number. For each candidate, amazon_query must be a "
+            "concise English search phrase containing the exact brand, model, and product type that a user can paste into Amazon.com. "
+            "If you are not confident that a specific model is sold on Amazon.com, choose a better-known Amazon product instead. "
+            "The six curated categories are backpack, headphones, running_shoes, tablet, "
             "keyboard, and smartwatch; set supported_category to one of those only when it truly matches. For every other category, set it "
             "to null and still provide recommendations. Match the user's language. Keep the reply concise and useful."
         )
@@ -277,6 +281,7 @@ class OpenCatalogChatClient:
             "properties": {
                 "title": {"type": "string"},
                 "brand": {"type": "string"},
+                "amazon_query": {"type": "string"},
                 "estimated_price_usd": {"type": "number"},
                 "fit_score": {"type": "integer", "minimum": 0, "maximum": 100},
                 "value_score": {"type": "integer", "minimum": 0, "maximum": 100},
@@ -289,7 +294,7 @@ class OpenCatalogChatClient:
                 "keywords": {"type": "array", "items": {"type": "string"}, "maxItems": 5},
             },
             "required": [
-                "title", "brand", "estimated_price_usd", "fit_score", "value_score", "durability_score",
+                "title", "brand", "amazon_query", "estimated_price_usd", "fit_score", "value_score", "durability_score",
                 "feature_score", "user_satisfaction", "rationale", "pros", "cons", "keywords",
             ],
             "additionalProperties": False,
@@ -363,6 +368,7 @@ class OpenCatalogChatClient:
         recs = []
         for index, item in enumerate(recommendations):
             title = str(item["title"])
+            amazon_query = str(item.get("amazon_query") or title).strip()
             price = round(max(0, float(item["estimated_price_usd"])), 2)
             recs.append(
                 {
@@ -372,7 +378,8 @@ class OpenCatalogChatClient:
                     "rating": None,
                     "reviews": None,
                     "score": int(item["fit_score"]),
-                    "url": f"https://www.amazon.com/s?k={quote_plus(title)}",
+                    "url": f"https://www.amazon.com/s?k={quote_plus(amazon_query)}&ref=nb_sb_noss",
+                    "amazon_query": amazon_query,
                     "pros": ", ".join(item.get("pros") or []),
                     "cons": ", ".join(item.get("cons") or []),
                     "badge": BADGES[index],
@@ -434,7 +441,10 @@ class OpenCatalogChatClient:
             "mode": "llm-open-catalog",
             "model": active_model,
             "message": str(data.get("reply") or f"Here are three options for {category}."),
-            "source_note": "AI-generated shopping guidance. Prices, availability, ratings and specifications are not live data.",
+            "source_note": (
+                "AI-generated shopping guidance. Prices, availability, ratings and specifications are not live data. "
+                "Amazon buttons open model-specific search results, not verified product-detail pages."
+            ),
             "algorithm": {
                 "name": "LLM-assisted open-category recommendation",
                 "dimensions": ["value", "durability", "features", "user_satisfaction"],

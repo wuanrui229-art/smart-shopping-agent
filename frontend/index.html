@@ -952,7 +952,7 @@ function renderDecisionPanel(result) {
         html += `<span class="rec-tag">Balanced mode:</span> Optimal equilibrium between price, quality, and features.`;
     }
     html += `<br><br><strong>${topRec.title}</strong> — ${topRec.estimated ? 'estimated ' : ''}$${topRec.price} | Score: ${topRec.score}/100<br>`;
-    html += `<a href="${topRec.url}" class="btn-amazon" target="_blank">${topRec.estimated ? 'Search current listings' : 'View on Amazon'}</a></div>`;
+    html += `<a href="${topRec.url}" class="btn-amazon" target="_blank" rel="noopener noreferrer" title="Amazon search results; verify the exact model before purchase">Search this model on Amazon</a></div>`;
 
     panel.innerHTML = html;
 }
@@ -1020,7 +1020,7 @@ function renderProductDeepCard(rec, icon, rank) {
         html += `</div>`;
     }
 
-    html += `<a href="${rec.url}" class="btn-amazon" target="_blank">${rec.estimated ? 'Search current listings' : 'View on Amazon'}</a>`;
+    html += `<a href="${rec.url}" class="btn-amazon" target="_blank" rel="noopener noreferrer" title="Amazon search results; verify the exact model before purchase">Search this model on Amazon</a>`;
     html += `</div>`;
     return html;
 }
