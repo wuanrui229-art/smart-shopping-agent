@@ -809,7 +809,11 @@ async function processMessage(text) {
         renderDecisionPanel(result);
         persistState();
     } catch (error) {
-        const message = error.name === 'AbortError' ? 'Request timed out. Please retry.' : error.message;
+        const rawMessage = error.name === 'AbortError' ? 'Request timed out. Please retry.' : String(error.message || error);
+        const connectionInterrupted = /network error|failed to fetch|stream ended|load failed/i.test(rawMessage);
+        const message = connectionInterrupted
+            ? 'Kimi 的回答连接意外中断，请稍后重试。商品品类没有限制。'
+            : rawMessage;
         failBackendTrace(message);
         state.messages.push({role:'assistant', content: `Service error: ${escapeHtml(message)}`});
         saveSession();

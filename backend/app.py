@@ -113,7 +113,20 @@ def _recommend_for_request(request: ChatRequest, preferences: dict, runtime_oidc
         preferences=preferences,
         runtime_oidc_token=runtime_oidc_token,
     )
-    return llm_result or recommend_original(request.user_input, preferences=preferences)
+    if llm_result:
+        return llm_result
+    if detect_category(request.user_input) is None and open_catalog.describe(runtime_oidc_token)["enabled"]:
+        chinese = any("\u4e00" <= char <= "\u9fff" for char in request.user_input)
+        return {
+            "status": "service_unavailable",
+            "message": (
+                "Kimi 暂时没有在响应时限内完成回答，请稍后重试。商品品类没有限制，这不是因为系统不支持该商品。"
+                if chinese
+                else "Kimi did not finish within the response limit. Please retry shortly; this is not a product-category restriction."
+            ),
+            "mode": "llm-timeout",
+        }
+    return recommend_original(request.user_input, preferences=preferences)
 
 
 @app.post("/api/original/chat")

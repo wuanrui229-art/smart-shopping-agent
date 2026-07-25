@@ -130,7 +130,7 @@ def test_explicit_openai_key_overrides_vercel_runtime_oidc(monkeypatch):
     client = OpenCatalogChatClient()
     captured = {}
 
-    def fake_post(payload, api_key, base_url):
+    def fake_post(payload, api_key, base_url, timeout_seconds=None):
         captured.update({"model": payload["model"], "api_key": api_key, "base_url": base_url})
         return {
             "choices": [
@@ -161,7 +161,7 @@ def test_kimi_key_enables_open_catalog_and_overrides_vercel_oidc(monkeypatch):
     client = OpenCatalogChatClient()
     captured = {}
 
-    def fake_post(payload, api_key, base_url):
+    def fake_post(payload, api_key, base_url, timeout_seconds=None):
         captured.update({
             "model": payload["model"],
             "api_key": api_key,
@@ -204,7 +204,7 @@ def test_kimi_overload_retries_then_uses_fallback_model(monkeypatch):
     client = OpenCatalogChatClient()
     attempted_models = []
 
-    def fake_post(payload, api_key, base_url):
+    def fake_post(payload, api_key, base_url, timeout_seconds=None):
         attempted_models.append(payload["model"])
         if payload["model"] == "kimi-k3":
             raise HTTPError(
@@ -239,7 +239,7 @@ def test_kimi_timeout_moves_directly_to_fallback_model(monkeypatch):
     client = OpenCatalogChatClient()
     attempted_models = []
 
-    def fake_post(payload, api_key, base_url):
+    def fake_post(payload, api_key, base_url, timeout_seconds=None):
         attempted_models.append(payload["model"])
         if payload["model"] == "kimi-k3":
             raise TimeoutError("primary model timed out")
@@ -270,7 +270,7 @@ def test_kimi_timeout_uses_vercel_gateway_when_oidc_is_available(monkeypatch):
     client = OpenCatalogChatClient()
     attempts = []
 
-    def fake_post(payload, api_key, base_url):
+    def fake_post(payload, api_key, base_url, timeout_seconds=None):
         attempts.append((payload["model"], api_key, base_url))
         if base_url == "https://api.moonshot.cn/v1":
             raise TimeoutError("China endpoint timed out")
@@ -295,7 +295,7 @@ def test_kimi_timeout_uses_vercel_gateway_when_oidc_is_available(monkeypatch):
     ]
 
 
-def test_vercel_prefers_faster_kimi_model_without_gateway(monkeypatch):
+def test_vercel_keeps_configured_kimi_model_first_without_gateway(monkeypatch):
     monkeypatch.setenv("VERCEL", "1")
     monkeypatch.setenv("LLM_PROVIDER", "kimi")
     monkeypatch.setenv("MOONSHOT_API_KEY", "test-kimi-key")
@@ -303,8 +303,39 @@ def test_vercel_prefers_faster_kimi_model_without_gateway(monkeypatch):
     monkeypatch.delenv("ENABLE_AI_GATEWAY_FALLBACK", raising=False)
     client = OpenCatalogChatClient()
 
-    assert client._model_candidates(client._resolve_provider()) == ["kimi-k2.5", "kimi-k3"]
+    assert client._model_candidates(client._resolve_provider()) == ["kimi-k3", "kimi-k2.5"]
     assert client._gateway_fallback_config("runtime-oidc-token")["api_key"] == ""
+
+
+def test_vercel_caps_fallback_timeout_to_finish_before_function_limit(monkeypatch):
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setenv("LLM_PROVIDER", "kimi")
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-kimi-key")
+    monkeypatch.setenv("MOONSHOT_MODEL", "kimi-k3")
+    clock = iter([0.0, 0.0, 28.0])
+    monkeypatch.setattr(open_catalog_module, "monotonic", lambda: next(clock))
+    client = OpenCatalogChatClient()
+    attempts = []
+
+    def fake_post(payload, api_key, base_url, timeout_seconds=None):
+        attempts.append((payload["model"], timeout_seconds))
+        if payload["model"] == "kimi-k3":
+            raise TimeoutError("primary model timed out")
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"intent":"chat","language":"zh","reply":"备用模型已响应。","category_label":"","supported_category":null,"demand_summary":"","budget_label":"","key_concerns":[],"market_notes":[],"recommendations":[]}'
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(client, "_post", fake_post)
+    result = client.respond("你好")
+
+    assert result["status"] == "conversation"
+    assert attempts == [("kimi-k3", 27.0), ("kimi-k2.5", 14.0)]
 
 
 def test_price_sensitivity_reorders_running_shoe_alternatives():

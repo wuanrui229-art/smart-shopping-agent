@@ -125,6 +125,25 @@ def test_original_chat_returns_contextual_non_catalog_answers(tmp_path):
         assert "化妆品" in cosmetics.json()["message"]
 
 
+def test_open_category_timeout_is_not_reported_as_a_category_limit(tmp_path, monkeypatch):
+    monkeypatch.setattr(open_catalog, "respond", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        open_catalog,
+        "describe",
+        lambda runtime_oidc_token="": {"enabled": True, "provider": "kimi-direct", "model": "kimi-k3"},
+    )
+
+    with make_client(tmp_path) as client:
+        response = client.post(
+            "/api/original/chat",
+            json={"user_input": "我想买一台500元以内的烤箱", "user_id": "timeout-user", "session_id": "timeout-session"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "service_unavailable"
+    assert "商品品类没有限制" in response.json()["message"]
+
+
 def test_session_history_can_be_deleted_individually_or_all_at_once(tmp_path):
     with make_client(tmp_path) as client:
         for session_id in ("history-1", "history-2"):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from time import sleep
+from time import monotonic, sleep
 from typing import Any, Optional
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus
@@ -125,10 +125,6 @@ class OpenCatalogChatClient:
         if not fallbacks:
             fallbacks = ["kimi-k2.5"]
         candidates = list(dict.fromkeys([primary, *fallbacks]))
-        if os.getenv("VERCEL", "").strip() and "kimi-k2.5" in candidates:
-            # K2.5 is typically faster for the cross-region classroom demo.
-            candidates.remove("kimi-k2.5")
-            candidates.insert(0, "kimi-k2.5")
         return candidates
 
     def respond(
@@ -178,6 +174,11 @@ class OpenCatalogChatClient:
         if gateway_fallback["api_key"] and config["provider"] != "vercel-ai-gateway":
             candidates.append((gateway_fallback, gateway_fallback["model"]))
 
+        started_at = monotonic()
+        # Leave enough time for FastAPI to close the NDJSON stream normally before
+        # Vercel's 60-second function limit. A platform kill looks like a generic
+        # browser "network error" even when the upstream model was the slow part.
+        request_budget = 45.0 if os.getenv("VERCEL", "").strip() else None
         for active_config, candidate_model in candidates:
             active_api_key = active_config["api_key"]
             active_base_url = active_config["base_url"]
@@ -194,11 +195,22 @@ class OpenCatalogChatClient:
 
             attempts = 2 if active_config["provider"] == "kimi-direct" else 1
             for attempt in range(1, attempts + 1):
+                timeout_seconds: Optional[float] = None
+                if request_budget is not None:
+                    remaining = request_budget - (monotonic() - started_at)
+                    if remaining <= 4:
+                        print(
+                            "open_catalog_llm_budget_exhausted "
+                            f"model={candidate_model} remaining_s={remaining:.1f}"
+                        )
+                        return None
+                    timeout_seconds = max(1.0, min(27.0, remaining - 3.0))
                 try:
                     response = self._post(
                         payload,
                         api_key=active_api_key,
                         base_url=active_base_url,
+                        timeout_seconds=timeout_seconds,
                     )
                     content = response["choices"][0]["message"]["content"]
                     data = json.loads(content)
@@ -237,7 +249,12 @@ class OpenCatalogChatClient:
         return None
 
     @staticmethod
-    def _post(payload: dict[str, Any], api_key: str, base_url: str) -> dict[str, Any]:
+    def _post(
+        payload: dict[str, Any],
+        api_key: str,
+        base_url: str,
+        timeout_seconds: Optional[float] = None,
+    ) -> dict[str, Any]:
         request = Request(
             f"{base_url}/chat/completions",
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -245,7 +262,7 @@ class OpenCatalogChatClient:
             method="POST",
         )
         # Allow two Kimi models to run within Vercel's 60-second function limit.
-        timeout = 27 if "api.moonshot.cn" in base_url else 24
+        timeout = timeout_seconds or (27 if "api.moonshot.cn" in base_url else 24)
         with urlopen(request, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
 
